@@ -37,47 +37,6 @@ if ($path === 'sprint') {
     }
     $apiUrl = "https://api.clickup.com/api/v2/folder/$folderId/list?archived=false";
 
-} else if ($path === 'list') {
-    $listId = isset($_GET['listId']) ? $_GET['listId'] : '';
-    $apiUrl = "https://api.clickup.com/api/v2/list/$listId";
-
-} else if ($path === 'tasks') {
-    $listId = isset($_GET['listId']) ? $_GET['listId'] : '';
-    $apiUrl = "https://api.clickup.com/api/v2/list/$listId/task?include_closed=true&subtasks=true";
-
-} else if ($path === 'folder_tasks') {
-    $teamId = getenv('VITE_CLICKUP_TEAM_ID'); // Verify if env vars are accessible or passed via query
-    // Since PHP might not have access to .env easily without a library, better to expect teamId in query if possible.
-    // However, DashboardPage doesn't send teamId for some of these. 
-    // Let's rely on query params as much as possible or fail gracefully.
-    // vite.config.js used env.VITE_CLICKUP_TEAM_ID.
-    
-    // For 'folder_tasks', vite config used env.VITE_CLICKUP_TEAM_ID.
-    // We should fallback to query param if getenv fails, or hardcode if we must (bad practice).
-    // Let's check if the requester sends teamId.
-    
-    $folderId = isset($_GET['folderId']) ? $_GET['folderId'] : '';
-    $teamId = isset($_GET['teamId']) ? $_GET['teamId'] : ''; // Should be passed from frontend
-    
-    // If frontend doesn't pass it, this will fail. DashboardPage.jsx doesn't seem to call 'folder_tasks' yet.
-    // If it did, we'd need to update it to pass teamId.
-    
-    $apiUrl = "https://api.clickup.com/api/v2/team/$teamId/task?project_ids[]=$folderId&include_closed=true&subtasks=true";
-
-} else if ($path === 'team_tasks') {
-    $listId = isset($_GET['listId']) ? $_GET['listId'] : '';
-    $teamId = isset($_GET['teamId']) ? $_GET['teamId'] : '';
-    $apiUrl = "https://api.clickup.com/api/v2/team/$teamId/task?list_ids[]=$listId&include_closed=true&subtasks=true";
-
-} else if ($path === 'list_views') {
-    $listId = isset($_GET['listId']) ? $_GET['listId'] : '';
-    $apiUrl = "https://api.clickup.com/api/v2/list/$listId/view";
-
-} else if ($path === 'view_tasks') {
-    $viewId = isset($_GET['viewId']) ? $_GET['viewId'] : '';
-    $page = isset($_GET['page']) ? $_GET['page'] : '0';
-    $apiUrl = "https://api.clickup.com/api/v2/view/$viewId/task?page=$page&include_closed=true";
-
 } else if ($path === 'user') {
     $apiUrl = "https://api.clickup.com/api/v2/user";
 
