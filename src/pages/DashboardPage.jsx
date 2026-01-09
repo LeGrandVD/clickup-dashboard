@@ -97,10 +97,13 @@ const DashboardPage = () => {
   };
 
   const fetchData = async (token) => {
+    console.log('Fetching data...');
     setLoading(true);
     try {
       const teamId = import.meta.env.VITE_CLICKUP_TEAM_ID;
       const folderId = import.meta.env.VITE_CLICKUP_FOLDER_ID;
+
+      console.log(teamId, folderId);
 
       if (!teamId || !folderId) {
         setLoading(false);
