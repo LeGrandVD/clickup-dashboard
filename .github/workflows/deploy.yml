@@ -33,4 +33,4 @@ jobs:
 
       - name: Deploy with Rsync
         run: |
-          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" dist/ ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:${{ secrets.REMOTE_TARGET }}
+          rsync -avz --delete -e "ssh -p 5022 -o StrictHostKeyChecking=no" dist/ ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:${{ secrets.REMOTE_TARGET }}
