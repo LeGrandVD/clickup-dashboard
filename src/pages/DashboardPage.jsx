@@ -723,13 +723,13 @@ const DashboardPage = () => {
                                 </tr>
                             ))}
                         </tbody>
-                        <tfoot>
+                         <tfoot>
                              <tr style={{ borderTop: '2px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.02)' }}>
                                 <td colSpan={2} style={{ padding: '1rem', fontWeight: 700, textAlign: 'right' }}>TOTAL</td>
-                                <td style={{ padding: '1rem', textAlign: 'center', fontWeight: 700 }}>{data.metrics?.totalWorkDays || 0}</td>
-                                <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 700 }}>{data.fullWeeklyData.reduce((acc, w) => acc + w.target, 0)}</td>
-                                <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 700, color: 'var(--accent-blue)' }}>{data.metrics?.totalPointsDone || 0}</td>
-                                <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 700 }}>
+                                <td data-label="Journées" style={{ padding: '1rem', textAlign: 'center', fontWeight: 700 }}>{data.metrics?.totalWorkDays || 0}</td>
+                                <td data-label="Objectif" style={{ padding: '1rem', textAlign: 'right', fontWeight: 700 }}>{data.fullWeeklyData.reduce((acc, w) => acc + w.target, 0)}</td>
+                                <td data-label="Fait" style={{ padding: '1rem', textAlign: 'right', fontWeight: 700, color: 'var(--accent-blue)' }}>{data.metrics?.totalPointsDone || 0}</td>
+                                <td data-label="Restant" style={{ padding: '1rem', textAlign: 'right', fontWeight: 700 }}>
                                     {(() => {
                                         const totalRemaining = data.fullWeeklyData.reduce((acc, w) => acc + (w.isHoliday ? 0 : w.remaining), 0);
                                         return (
@@ -753,8 +753,9 @@ const DashboardPage = () => {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
              
              {/* Week Navigation */}
-             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+             <div className="week-nav-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <button 
+                    className="nav-prev"
                     onClick={() => {
                         const prevWeek = new Date(currentDate);
                         prevWeek.setDate(prevWeek.getDate() - 7);
@@ -763,10 +764,10 @@ const DashboardPage = () => {
                     style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                 >
                     <ChevronLeft size={20} />
-                    <span style={{ fontSize: '0.875rem' }}>Semaine précédente</span>
+                    <span className="nav-text" style={{ fontSize: '0.875rem' }}>Semaine précédente</span>
                 </button>
                 
-                <div style={{ fontWeight: 600, fontSize: '1rem' }}>
+                <div className="nav-date" style={{ fontWeight: 600, fontSize: '1rem' }}>
                     {(() => {
                         const { start, end } = getWeekRange(currentDate);
                         const s = new Date(start);
@@ -775,8 +776,9 @@ const DashboardPage = () => {
                     })()}
                 </div>
 
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <div className="nav-right-group">
                      <button 
+                        className="nav-today"
                         onClick={() => setCurrentDate(new Date())}
                         style={{ 
                             background: 'rgba(255,255,255,0.05)', 
@@ -792,6 +794,7 @@ const DashboardPage = () => {
                         Aujourd'hui
                     </button>
                     <button 
+                        className="nav-next"
                         onClick={() => {
                             const nextWeek = new Date(currentDate);
                             nextWeek.setDate(nextWeek.getDate() + 7);
@@ -799,7 +802,7 @@ const DashboardPage = () => {
                         }}
                         style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                     >
-                        <span style={{ fontSize: '0.875rem' }}>Semaine suivante</span>
+                        <span className="nav-text" style={{ fontSize: '0.875rem' }}>Semaine suivante</span>
                         <ChevronRight size={20} />
                     </button>
                 </div>
