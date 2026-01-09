@@ -161,10 +161,10 @@ const DashboardPage = () => {
       />
 
 
-      <header style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+      <header className="header-section" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Dashboard</h2>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Tableau de bord</h2>
             </div>
             <div style={{ display: 'flex', gap: '0.75rem' }}>
               <button style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
@@ -481,7 +481,7 @@ const DashboardPage = () => {
              </div>
 
              {/* Summary Cards */}
-             <div className="stat-grid" style={{ marginBottom: '1.5rem', gridTemplateColumns: 'repeat(3, 1fr)' }}>
+             <div className="stat-grid stat-grid-3" style={{ marginBottom: '1.5rem' }}>
                 <div className="glass-card stat-card">
                     <div style={{ color: 'var(--accent-blue)', marginBottom: '0.5rem' }}>
                         <ListTodo size={24} />
@@ -720,7 +720,7 @@ const DashboardPage = () => {
               style={{ textAlign: 'center', marginBottom: '1.5rem', padding: '1rem' }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                 <h3 style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sprint Global</h3>
+                 <h3 style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Progression Sprint</h3>
                  <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>{Math.round(progress)}%</span>
               </div>
               
@@ -750,7 +750,7 @@ const DashboardPage = () => {
                   <ListTodo size={20} />
                 </div>
                 <span style={{ fontSize: '1.25rem', fontWeight: 600 }}>{data.tasksRemaining}</span>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Tasks Remaining</p>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Tâches restantes</p>
               </motion.div>
 
               <motion.div 
@@ -800,7 +800,7 @@ const DashboardPage = () => {
             className="glass-card dashboard-tasks"
             style={{ padding: '1rem' }}
           >
-            <h3 style={{ fontSize: '1.125rem', marginBottom: '1rem', textAlign: 'left' }}>Tasks this sprint</h3>
+            <h3 style={{ fontSize: '1.125rem', marginBottom: '1rem', textAlign: 'left' }}>Tâches du sprint</h3>
             
             {Object.keys(groupedTasks).length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -916,7 +916,7 @@ const DashboardPage = () => {
                 })}
               </div>
             ) : (
-                <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>No tasks found for this sprint.</p>
+                <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>Aucune tâche trouvée pour ce sprint.</p>
             )}
           </motion.div>
       </motion.div>

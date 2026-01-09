@@ -99,6 +99,12 @@ body {
   gap: 1rem;
 }
 
+.stat-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
 .stat-card {
   display: flex;
   flex-direction: column;
@@ -207,6 +213,10 @@ body {
 @media (max-width: 639px) {
   .sprint-table thead {
     display: none;
+  }
+  
+  .stat-grid, .stat-grid-3 {
+    grid-template-columns: 1fr !important;
   }
   
   .sprint-table, .sprint-table tbody, .sprint-table tr, .sprint-table td {
