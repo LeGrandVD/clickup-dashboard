@@ -721,9 +721,9 @@ const DashboardPage = () => {
                         <tfoot>
                              <tr style={{ borderTop: '2px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.02)' }}>
                                 <td colSpan={2} style={{ padding: '1rem', fontWeight: 700, textAlign: 'right' }}>TOTAL</td>
-                                <td style={{ padding: '1rem', textAlign: 'center', fontWeight: 700 }}>{data.metrics.totalWorkDays}</td>
+                                <td style={{ padding: '1rem', textAlign: 'center', fontWeight: 700 }}>{data.metrics?.totalWorkDays || 0}</td>
                                 <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 700 }}>{data.fullWeeklyData.reduce((acc, w) => acc + w.target, 0)}</td>
-                                <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 700, color: 'var(--accent-blue)' }}>{data.metrics.totalPointsDone}</td>
+                                <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 700, color: 'var(--accent-blue)' }}>{data.metrics?.totalPointsDone || 0}</td>
                                 <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 700 }}>
                                     {(() => {
                                         const totalRemaining = data.fullWeeklyData.reduce((acc, w) => acc + (w.isHoliday ? 0 : w.remaining), 0);
