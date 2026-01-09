@@ -39,7 +39,7 @@ export default defineConfig(({ mode }) => {
                 return;
             }
 
-            if (url.pathname.includes('/api/proxy')) {
+            if (url.pathname.includes('/api/proxy') || url.pathname.includes('/proxy.php')) {
               const urlParams = url.searchParams
               const path = urlParams.get('path')
               const folderId = urlParams.get('folderId')

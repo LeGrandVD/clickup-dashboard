@@ -108,7 +108,7 @@ const DashboardPage = () => {
       }
       
       const headers = token ? { 'Authorization': token } : {};
-      const proxyUrl = `${import.meta.env.BASE_URL}api/proxy`;
+      const proxyUrl = `${import.meta.env.BASE_URL}proxy.php`;
 
       // 1. Get Lists in Folder (Sprint)
       // Uses local proxy to avoid CORS
