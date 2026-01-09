@@ -108,22 +108,24 @@ const DashboardPage = () => {
       }
       
       const headers = token ? { 'Authorization': token } : {};
-      const proxyUrl = `${import.meta.env.BASE_URL}api/proxy`;
 
+      // Direct ClickUp API calls (bypassing dev proxy)
       // 1. Get Lists in Folder (Sprint)
-      // Uses local proxy to avoid CORS
-      const sprintRes = await axios.get(`${proxyUrl}?path=sprint&folderId=${folderId}`, { headers });
+      // Proxy: /api/proxy?path=sprint&folderId=${folderId} -> https://api.clickup.com/api/v2/folder/${folderId}/list?archived=false
+      const sprintRes = await axios.get(`https://api.clickup.com/api/v2/folder/${folderId}/list?archived=false`, { headers });
       const latestSprint = sprintRes.data.lists[0];
       
       // 2. Get User
-      const userRes = await axios.get(`${proxyUrl}?path=user`, { headers });
+      // Proxy: /api/proxy?path=user -> https://api.clickup.com/api/v2/user
+      const userRes = await axios.get('https://api.clickup.com/api/v2/user', { headers });
       const currentUser = userRes.data.user;
 
       // 3. Get My Tasks
+      // Proxy: /api/proxy?path=my_tasks&userId=${currentUser.id}&page=${page} -> https://api.clickup.com/api/v2/team/${teamId}/task?assignees[]=${userId}&page=${page}&include_closed=true&subtasks=true
       let allTasks = [];
       let page = 0;
       while (true) {
-          const tasksRes = await axios.get(`${proxyUrl}?path=my_tasks&teamId=${teamId}&userId=${currentUser.id}&page=${page}`, { headers });
+          const tasksRes = await axios.get(`https://api.clickup.com/api/v2/team/${teamId}/task?assignees[]=${currentUser.id}&page=${page}&include_closed=true&subtasks=true`, { headers });
           allTasks = [...allTasks, ...tasksRes.data.tasks];
           if (tasksRes.data.last_page) break;
           page++;
