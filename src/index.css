@@ -1,0 +1,270 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+:root {
+  --bg-color: #05070a;
+  --card-bg: rgba(255, 255, 255, 0.03);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --accent-blue: #3b82f6;
+  --accent-purple: #8b5cf6;
+  --text-primary: #ffffff;
+  --text-secondary: #94a3b8;
+  --glass-blur: blur(16px);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Inter", sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.dashboard-container {
+  padding: 2rem 1rem;
+  /* Updated to allow Desktop 2-col layout */
+  max-width: 1200px; 
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.glass-card {
+  background: var(--card-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--card-border);
+  border-radius: 24px;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.progress-ring-container {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  margin: 1.5rem auto;
+}
+
+.progress-ring-svg {
+  transform: rotate(-90deg);
+}
+
+.progress-ring-circle {
+  transition: stroke-dashoffset 0.8s ease-in-out;
+  stroke-linecap: round;
+}
+
+.progress-ring-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+.loading-skeleton {
+  animation: pulse 1.5s infinite ease-in-out;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  color: var(--text-secondary);
+  gap: 1rem;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Skeleton Loading Styles */
+.skeleton-text {
+  height: 1em;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.skeleton-circle {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+}
+
+.skeleton-block {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+/* Responsive Sprint Table */
+.sprint-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.sprint-table th, .sprint-table td {
+  padding: 1rem;
+}
+
+.sprint-table th {
+  text-align: left;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.sprint-table tr {
+  border-top: 1px solid rgba(255,255,255,0.02);
+}
+
+.sprint-table thead tr {
+  border-top: none;
+}
+
+/* --- RESPONSIVE LAYOUTS --- */
+
+/* Mobile First Defaults (already largely present) */
+
+/* TABLET & MOBILE (< 1024px) */
+@media (max-width: 1023px) {
+    .dashboard-view-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+}
+
+/* MOBILE SPECIFIC (< 640px) */
+@media (max-width: 639px) {
+  .sprint-table thead {
+    display: none;
+  }
+  
+  .sprint-table, .sprint-table tbody, .sprint-table tr, .sprint-table td {
+    display: block;
+    width: 100%;
+  }
+  
+  .sprint-table tr {
+    margin-bottom: 1rem;
+    background: rgba(255,255,255,0.03);
+    border-radius: 12px;
+    padding: 1rem;
+    border: 1px solid var(--card-border);
+  }
+  
+  .sprint-table td {
+    padding: 0.5rem 0;
+    display: flex;
+    justify-content: space-between;
+    text-align: right;
+    border-bottom: 1px solid rgba(255,255,255,0.02);
+  }
+  
+  .sprint-table td:last-child {
+    border-bottom: none;
+  }
+  
+  .sprint-table td::before {
+    content: attr(data-label);
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-right: 1rem;
+    text-align: left;
+  }
+
+  /* Compact padding for mobile */
+  .glass-card {
+      padding: 1rem;
+  }
+  
+  .dashboard-container {
+      padding: 1rem;
+      gap: 1rem;
+  }
+}
+
+/* DESKTOP (> 1024px) */
+@media (min-width: 1024px) {
+    .dashboard-view-layout {
+        display: grid;
+        grid-template-columns: 320px 1fr; /* Fixed sidebar width, rest flexible */
+        gap: 2rem;
+        align-items: start;
+    }
+
+    /* Make the summary column sticky so it follows scroll */
+    .dashboard-summary {
+        position: sticky;
+        top: 2rem;
+    }
+}
