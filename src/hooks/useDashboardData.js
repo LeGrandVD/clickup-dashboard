@@ -1,0 +1,409 @@
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+
+const initialData = {
+    completedPoints: 0,
+    totalPoints: 0,
+    tasksRemaining: 0,
+    daysLeft: 0,
+    bufferDays: 0,
+    sprintName: '',
+    taskList: [],
+    weeklyPoints: 0,
+    dailyBreakdown: [],
+    metrics: null,
+    fullWeeklyData: [],
+    weeklyDetailedTasks: []
+};
+
+// Helper to get start and end of current week (Monday to Sunday)
+export const getWeekRange = (dateObj = new Date()) => {
+  const d = new Date(dateObj);
+  const day = d.getDay(); // 0 is Sunday
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is 0 (Sunday) to get previous Monday
+  
+  // Set to Monday 00:00:00
+  const startOfWeek = new Date(d.setDate(diff));
+  startOfWeek.setHours(0, 0, 0, 0);
+  
+  // Set to Sunday 23:59:59
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
+  
+  return { start: startOfWeek.getTime(), end: endOfWeek.getTime() };
+};
+
+// Helper to get ISO week number
+export const getISOWeekNumber = (d) => {
+  const date = new Date(d.valueOf());
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(),0,1));
+  return Math.ceil((((date - yearStart) / 86400000) + 1)/7);
+};
+
+// Helper to get date of ISO week start (Monday)
+export const getDateOfISOWeek = (w, y) => {
+  const simple = new Date(y, 0, 1 + (w - 1) * 7);
+  const dow = simple.getDay();
+  const ISOweekStart = simple;
+  if (dow <= 4)
+      ISOweekStart.setDate(simple.getDate() - simple.getDay() + 1);
+  else
+      ISOweekStart.setDate(simple.getDate() + 8 - simple.getDay());
+  return ISOweekStart;
+};
+
+export const useDashboardData = () => {
+    const navigate = useNavigate();
+    const [loading, setLoading] = useState(true);
+    const [accessToken, setAccessToken] = useState(() => localStorage.getItem('clickup_access_token'));
+    const [rawData, setRawData] = useState(null);
+    const [data, setData] = useState(initialData);
+    const [currentDate, setCurrentDate] = useState(new Date());
+    const [rawTasks, setRawTasks] = useState([]);
+    
+    const [settings, setSettings] = useState(() => {
+      const saved = localStorage.getItem('dashboardSettings');
+      return saved ? JSON.parse(saved) : { weeklyTarget: 28, vacationWeeks: 4 };
+    });
+  
+    const saveSettings = (newSettings) => {
+      setSettings(newSettings);
+      localStorage.setItem('dashboardSettings', JSON.stringify(newSettings));
+    };
+
+    const fetchData = async (token) => {
+        setLoading(true);
+        try {
+          const teamId = import.meta.env.VITE_CLICKUP_TEAM_ID;
+          const folderId = import.meta.env.VITE_CLICKUP_FOLDER_ID;
+    
+          if (!teamId || !folderId) {
+            setLoading(false);
+            return;
+          }
+          
+          const headers = token ? { 'Authorization': token } : {};
+          const proxyUrl = `${import.meta.env.BASE_URL}proxy.php`;
+    
+          // 1. Get Lists in Folder (Sprint)
+          const sprintRes = await axios.get(`${proxyUrl}?path=sprint&folderId=${folderId}`, { headers });
+          const latestSprint = sprintRes.data.lists[0];
+          
+          // 2. Get User
+          const userRes = await axios.get(`${proxyUrl}?path=user`, { headers });
+          const currentUser = userRes.data.user;
+    
+          // 3. Get My Tasks
+          let allTasks = [];
+          let page = 0;
+          while (true) {
+              const tasksRes = await axios.get(`${proxyUrl}?path=my_tasks&teamId=${teamId}&userId=${currentUser.id}&page=${page}`, { headers });
+              allTasks = [...allTasks, ...tasksRes.data.tasks];
+              if (tasksRes.data.last_page) break;
+              page++;
+          }
+    
+          setRawData({
+            latestSprint,
+            currentUser,
+            allTasks
+          });
+          
+        } catch (error) {
+          console.error('Error fetching data:', error);
+          if (error.response && error.response.status === 401) {
+              localStorage.removeItem('clickup_access_token');
+              navigate('/login');
+          }
+        } finally {
+          setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (accessToken) {
+            fetchData(accessToken);
+        } else {
+            navigate('/login');
+        }
+    }, [accessToken, navigate]);
+
+    // UseEffect for Date-based Weekly stats
+    useEffect(() => {
+        if (rawTasks.length === 0) return;
+    
+        const { start: startOfWeek, end: endOfWeek } = getWeekRange(currentDate);
+        
+        let weeklyPointsCurrent = 0;
+        const weeklyDetailedTasks = [];
+        const dailyBreakdown = [0, 0, 0, 0, 0, 0, 0];
+    
+        rawTasks.forEach(task => {
+            if (task.isClosed && task.dateDone) {
+                if (task.dateDone >= startOfWeek && task.dateDone <= endOfWeek) {
+                    weeklyPointsCurrent += task.points;
+                    weeklyDetailedTasks.push(task);
+                    
+                    const date = new Date(task.dateDone);
+                    let dayIndex = date.getDay() - 1; 
+                    if (dayIndex === -1) dayIndex = 6;
+                    dailyBreakdown[dayIndex] += task.points;
+                }
+            }
+        });
+    
+        weeklyPointsCurrent = Math.round(weeklyPointsCurrent * 2) / 2;
+    
+        setData(prev => ({
+            ...prev,
+            weeklyPoints: weeklyPointsCurrent,
+            dailyBreakdown,
+            weeklyDetailedTasks
+        }));
+    
+    }, [currentDate, rawTasks]);
+
+    // Processing raw data into stats
+    useEffect(() => {
+        if (!rawData) return;
+    
+        const { latestSprint, allTasks } = rawData;
+        const { weeklyTarget, vacationWeeks } = settings;
+    
+        // 1. Process Logic for Current Sprint Dashboard
+        const tasks = allTasks.filter(task => {
+            const isHomeList = task.list.id === latestSprint.id;
+            const isSecondaryList = task.locations?.some(loc => loc.id === latestSprint.id);
+            return isHomeList || isSecondaryList;
+        }).map(task => {
+          const totalPointsField = task.custom_fields?.find(f => f.id === 'c080dbb1-90fc-4095-ac30-2d05d20b821a');
+          let points = 0;
+          if (totalPointsField && totalPointsField.value != null) {
+             points = parseFloat(totalPointsField.value) || 0;
+          }
+          if (points === 0 && task.points) {
+              points = task.points;
+          }
+          
+          const folderName = task.folder && !task.folder.hidden ? task.folder.name : null;
+          const listName = task.list.name;
+          let projectInfo = folderName || listName;
+          
+          return {
+            id: task.id,
+            name: task.name,
+            points,
+            status: task.status.status, 
+            isClosed: task.status.type === 'closed',
+            statusColor: task.status.color,
+            project: projectInfo, 
+            customId: task.custom_id,
+            dateDone: task.date_closed ? parseInt(task.date_closed) : null 
+          };
+        });
+    
+        let completed = 0;
+        let total = 0;
+        let remaining = 0;
+    
+        tasks.forEach(task => {
+          total += task.points;
+          if (task.isClosed) {
+            completed += task.points;
+          } else {
+            if (task.points > 0 || task.name.length > 3) {
+              remaining++;
+            }
+          }
+        });
+    
+        completed = Math.round(completed * 2) / 2;
+        total = Math.round(total * 2) / 2;
+        
+        const taskListData = tasks;
+        const dueDate = latestSprint.due_date ? parseInt(latestSprint.due_date) : null;
+        
+        let diffDays = 0;
+        let bufferDays = 0;
+        
+        if (dueDate) {
+            const dateObj = new Date(dueDate);
+            const day = dateObj.getDay(); // 0=Sun, 1=Mon, ..., 4=Thu, ...
+            
+            // Find Sunday of that week (Sprint limit)
+            const daysToReachSunday = (7 - day) % 7;
+            const sundayTimestamp = dueDate + (daysToReachSunday * 24 * 60 * 60 * 1000);
+            
+            // Find Thursday of that week (Official deadline)
+            const thursdayTimestamp = sundayTimestamp - (3 * 24 * 60 * 60 * 1000);
+            
+            const nowMs = Date.now();
+            
+            diffDays = Math.ceil((thursdayTimestamp - nowMs) / (1000 * 60 * 60 * 24));
+            bufferDays = Math.ceil((sundayTimestamp - nowMs) / (1000 * 60 * 60 * 24));
+        } 
+    
+        // 2. Process Logic for Weekly/Yearly Stats
+        const processedAllTasks = allTasks.map(task => {
+           const totalPointsField = task.custom_fields?.find(f => f.id === 'c080dbb1-90fc-4095-ac30-2d05d20b821a');
+          let points = 0;
+          if (totalPointsField && totalPointsField.value != null) {
+             points = parseFloat(totalPointsField.value) || 0;
+          }
+          if (points === 0 && task.points) {
+              points = task.points;
+          }
+    
+          const folderName = task.folder && !task.folder.hidden ? task.folder.name : null;
+          const listName = task.list.name;
+          const project = folderName || listName;
+    
+          return {
+              id: task.id,
+              name: task.name,
+              project,
+              points,
+              isClosed: task.status.type === 'closed' || task.status.status === 'closed' || task.status.status === 'complete' || task.status.status === 'livré', 
+              dateDone: task.date_closed ? parseInt(task.date_closed) : (task.date_done ? parseInt(task.date_done) : null)
+          };
+        });
+    
+        setRawTasks(processedAllTasks);
+    
+        const { start: startOfWeek, end: endOfWeek } = getWeekRange();
+        const currentWeekNum = getISOWeekNumber(new Date());
+        const currentYear = new Date().getFullYear();
+    
+        let weeklyPointsCurrent = 0;
+        const weeklyDetailedTasks = [];
+        const weeklyDataMap = {}; // { weekNum: { points: 0, days: Set() } }
+        const dailyBreakdown = [0, 0, 0, 0, 0, 0, 0]; 
+    
+        processedAllTasks.forEach(task => {
+            if (task.isClosed && task.dateDone) {
+               // Current Week Points (Top Card)
+                if (task.dateDone >= startOfWeek && task.dateDone <= endOfWeek) {
+                    weeklyPointsCurrent += task.points;
+                    weeklyDetailedTasks.push(task);
+                    
+                    const date = new Date(task.dateDone);
+                    let dayIndex = date.getDay() - 1; 
+                    if (dayIndex === -1) dayIndex = 6; // Sunday
+                    
+                    dailyBreakdown[dayIndex] += task.points;
+                }
+                
+               // Yearly aggregation
+               const d = new Date(task.dateDone);
+               if (d.getFullYear() === currentYear) {
+                  const w = getISOWeekNumber(d);
+                  if (!weeklyDataMap[w]) weeklyDataMap[w] = { points: 0, days: new Set() };
+                  weeklyDataMap[w].points += task.points;
+                  weeklyDataMap[w].days.add(d.toDateString());
+               }
+            }
+        });
+        
+        weeklyPointsCurrent = Math.round(weeklyPointsCurrent * 2) / 2;
+    
+        // Build Sprint Table Data
+        const weeklyBreakdown = [];
+        let annualPointsTotal = 0;
+        let totalWorkDays = 0;
+        let holidaysTaken = 0;
+        
+        for (let i = 1; i <= currentWeekNum; i++) {
+            const data = weeklyDataMap[i] || { points: 0, days: new Set() };
+            const points = Math.round(data.points * 2) / 2;
+            const workDays = data.days.size;
+            
+            let target = weeklyTarget; 
+            let isHoliday = false;
+            
+            if (i < currentWeekNum && points === 0) {
+                target = 0;
+                isHoliday = true;
+                holidaysTaken++;
+            }
+            
+            weeklyBreakdown.push({
+                week: i,
+                startDate: getDateOfISOWeek(i, currentYear).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+                points,
+                workDays,
+                target,
+                remaining: target - points,
+                isHoliday
+            });
+            
+            annualPointsTotal += points;
+            totalWorkDays += workDays;
+        }
+        
+        // Metrics Calculation
+        const annualTarget = (52 - vacationWeeks) * weeklyTarget;
+        const annualRemaining = annualTarget - annualPointsTotal;
+        const averagePointsPerDay = totalWorkDays > 0 ? (annualPointsTotal / totalWorkDays).toFixed(1) : 0;
+        const vacationRemaining = vacationWeeks - holidaysTaken;
+        
+        const vacationWeeksUsed = weeklyBreakdown.filter(w => w.isHoliday).length;
+        const vacationWeeksRemaining = vacationWeeks - vacationWeeksUsed;
+    
+        weeklyBreakdown.reverse();
+    
+        setData({
+          completedPoints: completed,
+          totalPoints: total,
+          tasksRemaining: remaining,
+          daysLeft: diffDays,
+          bufferDays,
+          sprintName: latestSprint.name,
+          taskList: taskListData,
+          weeklyPoints: weeklyPointsCurrent, // Note: this gets overwritten by the Date-based useEffect, but that's okay/intended as they run in sequence
+          dailyBreakdown,
+          
+          metrics: {
+              annualTarget,
+              totalPointsDone: annualPointsTotal,
+              totalWorkDays,
+              averagePointsPerDay,
+              annualRemaining,
+              vacationRemaining,
+              vacationWeeksUsed,
+              vacationWeeksRemaining
+          },
+          fullWeeklyData: weeklyBreakdown,
+          weeklyDetailedTasks
+        });
+    
+      }, [rawData, settings]);
+
+      // Status Check Logic
+      const getStatusCheck = () => {
+        const today = new Date();
+        const currentIsoDay = today.getDay() || 7; // 1=Mon, 7=Sun
+        const workDaysPassed = Math.min(currentIsoDay, 4); 
+        
+        const expectedPoints = (settings.weeklyTarget / 4) * workDaysPassed;
+        const isUpToDate = data.weeklyPoints >= expectedPoints - 1; // 1 point buffer
+        const diff = data.weeklyPoints - expectedPoints;
+        
+        return { isUpToDate, expectedPoints, diff, currentIsoDay };
+      };
+
+    return {
+        data,
+        loading,
+        settings,
+        saveSettings,
+        currentDate,
+        setCurrentDate,
+        statusCheck: getStatusCheck(),
+        rawData,
+        fetchData: () => fetchData(accessToken)
+    };
+};
