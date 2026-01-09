@@ -24,6 +24,12 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          VITE_CLICKUP_TEAM_ID: ${{ secrets.VITE_CLICKUP_TEAM_ID }}
+          VITE_CLICKUP_FOLDER_ID: ${{ secrets.VITE_CLICKUP_FOLDER_ID }}
+          CLICKUP_CLIENT_ID: ${{ secrets.CLICKUP_CLIENT_ID }}
+          CLICKUP_CLIENT_SECRET: ${{ secrets.CLICKUP_CLIENT_SECRET }}
+          CLICKUP_TOKEN: ${{ secrets.CLICKUP_TOKEN }}
 
       - name: Setup SSH Key
         run: |
