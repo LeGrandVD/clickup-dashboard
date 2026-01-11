@@ -328,7 +328,8 @@ const DashboardPage = () => {
             {Object.keys(groupedTasks).length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {sortedStatusKeys.map(status => {
-                  const { tasks, color } = groupedTasks[status];
+                  const { tasks: unsortedTasks, color } = groupedTasks[status];
+                  const tasks = [...unsortedTasks].sort((a, b) => b.points - a.points);
                   const isExpanded = !!expandedStatuses[status]; // Default false
                   const groupPoints = tasks.reduce((acc, t) => acc + t.points, 0);
 
