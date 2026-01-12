@@ -69,7 +69,7 @@ export const useDashboardData = () => {
     
     const [settings, setSettings] = useState(() => {
       const saved = localStorage.getItem('dashboardSettings');
-      return saved ? JSON.parse(saved) : { weeklyTarget: 28, vacationWeeks: 4, openLinksIn: 'app', pointsMetric: 'total' };
+      return saved ? JSON.parse(saved) : { weeklyTarget: 28, vacationWeeks: 4, openLinksIn: 'app', pointsMetric: 'total', groupByProject: false };
     });
   
     const saveSettings = (newSettings) => {

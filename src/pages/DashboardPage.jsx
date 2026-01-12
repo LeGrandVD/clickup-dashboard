@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RefreshCw, ListTodo, CheckCircle2, ChevronDown, Calendar, Target, Bug } from 'lucide-react';
+import { RefreshCw, ListTodo, CheckCircle2, ChevronDown, Calendar, Target, Bug, Folder } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDashboardData } from '../hooks/useDashboardData';
 import SettingsModal from '../SettingsModal';
@@ -53,8 +53,8 @@ const DashboardPage = () => {
     }));
   };
 
-  // Group tasks by status logic (UI specific, can stay here or move to hook if preferred, but it's pure UI transformation)
-  const groupedTasks = data.taskList ? data.taskList.reduce((acc, task) => {
+  // Group tasks by status (Top level)
+  const groupedTasksByStatus = data.taskList ? data.taskList.reduce((acc, task) => {
     const status = task.status;
     if (!acc[status]) {
       acc[status] = { tasks: [], color: task.statusColor };
@@ -73,7 +73,7 @@ const DashboardPage = () => {
     return 100;
   };
 
-  const sortedStatusKeys = Object.keys(groupedTasks).sort((a, b) => {
+  const sortedStatusKeys = Object.keys(groupedTasksByStatus).sort((a, b) => {
     return getStatusPriority(a) - getStatusPriority(b);
   });
 
@@ -95,7 +95,7 @@ const DashboardPage = () => {
       <header className="header-section" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <img src="/icon-192.png" alt="Logo" style={{ height: '3rem', width: 'auto', borderRadius: '20%' }} />
+              <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="Logo" style={{ height: '3rem', width: 'auto', borderRadius: '20%' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginLeft: '0.5rem' }}>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500, textAlign: 'right' }}>
                     Multiplicateur
@@ -137,9 +137,9 @@ const DashboardPage = () => {
                 <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
               </button>
               <UserMenu 
-                  user={rawData?.currentUser} 
-                  onLogout={handleLogout} 
-                  onSettings={() => setIsSettingsOpen(true)} 
+                user={rawData?.currentUser} 
+                onLogout={handleLogout} 
+                onSettings={() => setIsSettingsOpen(true)} 
               />
             </div>
         </div>
@@ -419,20 +419,47 @@ const DashboardPage = () => {
             style={{ padding: '1rem' }}
           >
             <h3 style={{ fontSize: '1.125rem', marginBottom: '1rem', textAlign: 'left', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span>Tâches du sprint</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <span>Tâches du sprint</span>
+                     <button
+                        onClick={() => saveSettings({ ...settings, groupByProject: !settings.groupByProject })}
+                        style={{
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '6px',
+                            padding: '4px 8px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            color: 'var(--text-secondary)',
+                            fontSize: '0.75rem'
+                        }}
+                    >
+                        <Folder size={14} style={{ opacity: settings.groupByProject ? 1 : 0.5, color: settings.groupByProject ? 'var(--accent-blue)' : 'inherit' }} />
+                        {settings.groupByProject ? 'Sous-groupage : Projet' : 'Sous-groupage : Aucun'}
+                    </button>
+                </div>
             </h3>
             
-            {Object.keys(groupedTasks).length > 0 ? (
+            {Object.keys(groupedTasksByStatus).length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {sortedStatusKeys.map(status => {
-                  const { tasks: unsortedTasks, color } = groupedTasks[status];
-                  const tasks = [...unsortedTasks].sort((a, b) => {
-                      const pointsA = settings.pointsMetric === 'sprint' ? a.sprintPoints : a.points;
-                      const pointsB = settings.pointsMetric === 'sprint' ? b.sprintPoints : b.points;
-                      return pointsB - pointsA;
-                  });
-                  const isExpanded = !!expandedStatuses[status]; // Default false
-                  const groupPoints = tasks.reduce((acc, t) => acc + (settings.pointsMetric === 'sprint' ? t.sprintPoints : t.points), 0);
+                  const { tasks: statusTasks, color } = groupedTasksByStatus[status];
+                  const isExpanded = !!expandedStatuses[status]; 
+                  const statusPoints = statusTasks.reduce((acc, t) => acc + (settings.pointsMetric === 'sprint' ? t.sprintPoints : t.points), 0);
+
+                  // Sub-group by project if enabled
+                  const tasksByProject = settings.groupByProject 
+                    ? statusTasks.reduce((acc, t) => {
+                        const project = t.project || 'Sans projet';
+                        if (!acc[project]) acc[project] = [];
+                        acc[project].push(t);
+                        return acc;
+                      }, {})
+                    : { 'all': statusTasks };
+
+                  const sortedProjectKeys = Object.keys(tasksByProject).sort();
 
                   return (
                     <div key={status} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -466,11 +493,11 @@ const DashboardPage = () => {
                               {status}
                             </span>
                             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 400 }}>
-                              ({tasks.length})
+                              ({statusTasks.length})
                             </span>
                          </div>
                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                           {groupPoints} pts
+                           {statusPoints} pts
                          </span>
                       </button>
 
@@ -483,64 +510,88 @@ const DashboardPage = () => {
                             transition={{ duration: 0.3, ease: 'easeInOut' }}
                             style={{ overflow: 'hidden' }}
                           >
-                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingBottom: '0.5rem' }}>
-                                {tasks.map(task => (
-                                    <div 
-                                      key={task.id} 
-                                      onClick={() => handleTaskClick(task)}
-                                      style={{ 
-                                      display: 'flex', 
-                                      justifyContent: 'space-between', 
-                                      alignItems: 'center', 
-                                      padding: '1rem', 
-                                      borderRadius: '8px',
-                                      background: 'rgba(255,255,255,0.03)',
-                                      border: '1px solid rgba(255,255,255,0.05)',
-                                      position: 'relative',
-                                      overflow: 'hidden',
-                                      cursor: 'pointer',
-                                      transition: 'background 0.2s ease'
-                                    }} 
-                                    className="task-card"
-                                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
-                                    >
-                                        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: task.statusColor }}></div>
-                                        
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1, marginRight: '1rem' }}>
-                                           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                               {task.project && (
-                                                  <span style={{ 
-                                                      fontSize: '0.625rem', 
-                                                      textTransform: 'uppercase', 
-                                                      letterSpacing: '0.05em', 
-                                                      color: 'var(--text-secondary)',
-                                                      border: '1px solid rgba(255,255,255,0.1)',
-                                                      padding: '2px 6px',
-                                                      borderRadius: '4px'
-                                                  }}>
-                                                      {task.project}
-                                                  </span>
-                                               )}
-                                               <span style={{ fontSize: '0.625rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>#{task.customId || task.id.slice(0,5)}</span>
-                                           </div>
-                                           <span style={{ fontWeight: 500, fontSize: '0.9375rem', lineHeight: '1.4' }}>{task.name}</span>
+                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingBottom: '0.5rem', paddingLeft: settings.groupByProject ? '1rem' : '0' }}>
+                                {sortedProjectKeys.map(project => {
+                                   const projectTasks = [...tasksByProject[project]].sort((a, b) => {
+                                      const pointsA = settings.pointsMetric === 'sprint' ? a.sprintPoints : a.points;
+                                      const pointsB = settings.pointsMetric === 'sprint' ? b.sprintPoints : b.points;
+                                      return pointsB - pointsA;
+                                   });
+                                   const projectPoints = projectTasks.reduce((acc, t) => acc + (settings.pointsMetric === 'sprint' ? t.sprintPoints : t.points), 0);
+
+                                   return (
+                                     <div key={project} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                        {settings.groupByProject && (
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.25rem 0' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)' }}>
+                                                    <Folder size={12} />
+                                                    <span style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>{project}</span>
+                                                </div>
+                                                <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', opacity: 0.7 }}>{projectPoints} pts</span>
+                                            </div>
+                                        )}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                            {projectTasks.map(task => (
+                                                <div 
+                                                key={task.id} 
+                                                onClick={() => handleTaskClick(task)}
+                                                style={{ 
+                                                display: 'flex', 
+                                                justifyContent: 'space-between', 
+                                                alignItems: 'center', 
+                                                padding: '1rem', 
+                                                borderRadius: '8px',
+                                                background: 'rgba(255,255,255,0.03)',
+                                                border: '1px solid rgba(255,255,255,0.05)',
+                                                position: 'relative',
+                                                overflow: 'hidden',
+                                                cursor: 'pointer',
+                                                transition: 'background 0.2s ease'
+                                                }} 
+                                                className="task-card"
+                                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                                                >
+                                                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: task.statusColor }}></div>
+                                                    
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1, marginRight: '1rem' }}>
+                                                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                                            {!settings.groupByProject && task.project && (
+                                                                <span style={{ 
+                                                                    fontSize: '0.625rem', 
+                                                                    textTransform: 'uppercase', 
+                                                                    letterSpacing: '0.05em', 
+                                                                    color: 'var(--text-secondary)',
+                                                                    border: '1px solid rgba(255,255,255,0.1)',
+                                                                    padding: '2px 6px',
+                                                                    borderRadius: '4px'
+                                                                }}>
+                                                                    {task.project}
+                                                                </span>
+                                                            )}
+                                                            <span style={{ fontSize: '0.625rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>#{task.customId || task.id.slice(0,5)}</span>
+                                                        </div>
+                                                        <span style={{ fontWeight: 500, fontSize: '0.9375rem', lineHeight: '1.4' }}>{task.name}</span>
+                                                    </div>
+                                                    
+                                                    <div style={{ 
+                                                        background: 'rgba(255,255,255,0.05)', 
+                                                        padding: '0.25rem 0.75rem', 
+                                                        borderRadius: '100px', 
+                                                        fontSize: '0.875rem', 
+                                                        fontWeight: 600,
+                                                        color: 'var(--accent-blue)',
+                                                        minWidth: '3rem',
+                                                        textAlign: 'center'
+                                                    }}>
+                                                        {settings.pointsMetric === 'sprint' ? task.sprintPoints : task.points}
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
-                                        
-                                        <div style={{ 
-                                            background: 'rgba(255,255,255,0.05)', 
-                                            padding: '0.25rem 0.75rem', 
-                                            borderRadius: '100px', 
-                                            fontSize: '0.875rem', 
-                                            fontWeight: 600,
-                                            color: 'var(--accent-blue)',
-                                            minWidth: '3rem',
-                                            textAlign: 'center'
-                                        }}>
-                                            {settings.pointsMetric === 'sprint' ? task.sprintPoints : task.points}
-                                        </div>
-                                    </div>
-                                ))}
+                                     </div>
+                                   );
+                                })}
                              </div>
                           </motion.div>
                         )}

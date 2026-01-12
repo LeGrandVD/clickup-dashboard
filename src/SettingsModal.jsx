@@ -123,29 +123,71 @@ const SettingsModal = ({ isOpen, onClose, onSave, initialSettings }) => {
               <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                 Comportement des liens
               </label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
-                  <input
-                    type="radio"
-                    name="openLinksIn"
-                    value="app"
-                    checked={settings.openLinksIn !== 'web'} // Default to app
-                    onChange={handleChange}
-                    style={{ accentColor: 'var(--accent-blue)' }}
-                  />
-                  Application de bureau (clickup://)
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
-                  <input
-                    type="radio"
-                    name="openLinksIn"
-                    value="web"
-                    checked={settings.openLinksIn === 'web'}
-                    onChange={handleChange}
-                    style={{ accentColor: 'var(--accent-blue)' }}
-                  />
-                  Navigateur Web (https://)
-                </label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {[
+                  { value: 'app', label: 'Application de bureau (clickup://)' },
+                  { value: 'web', label: 'Navigateur Web (https://)' }
+                ].map((option) => (
+                  <label
+                    key={option.value}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '1rem',
+                      cursor: 'pointer',
+                      padding: '1rem',
+                      borderRadius: '12px',
+                      background: 'rgba(255, 255, 255, 0.03)',
+                      border: `1px solid ${settings.openLinksIn === option.value ? 'var(--accent-blue)' : 'var(--card-border)'}`,
+                      transition: 'all 0.2s ease',
+                      position: 'relative',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="openLinksIn"
+                      value={option.value}
+                      checked={settings.openLinksIn === option.value}
+                      onChange={handleChange}
+                      style={{ display: 'none' }}
+                    />
+                    <div style={{
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '50%',
+                      border: `2px solid ${settings.openLinksIn === option.value ? 'var(--accent-blue)' : 'var(--text-secondary)'}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
+                      {settings.openLinksIn === option.value && (
+                        <motion.div
+                          layoutId="link-radio"
+                          style={{
+                            width: '10px',
+                            height: '10px',
+                            borderRadius: '50%',
+                            background: 'var(--accent-blue)'
+                          }}
+                        />
+                      )}
+                    </div>
+                    <span style={{ color: settings.openLinksIn === option.value ? 'white' : 'var(--text-secondary)', fontWeight: 500 }}>
+                      {option.label}
+                    </span>
+                    {settings.openLinksIn === option.value && (
+                      <div style={{
+                        position: 'absolute',
+                        inset: 0,
+                        background: 'var(--accent-blue)',
+                        opacity: 0.05,
+                        pointerEvents: 'none'
+                      }} />
+                    )}
+                  </label>
+                ))}
               </div>
             </div>
 
@@ -153,29 +195,71 @@ const SettingsModal = ({ isOpen, onClose, onSave, initialSettings }) => {
               <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                 Affichage des points
               </label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
-                  <input
-                    type="radio"
-                    name="pointsMetric"
-                    value="total"
-                    checked={settings.pointsMetric !== 'sprint'} // Default to total
-                    onChange={handleChange}
-                    style={{ accentColor: 'var(--accent-blue)' }}
-                  />
-                  Points totaux (avec multiplicateur)
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
-                  <input
-                    type="radio"
-                    name="pointsMetric"
-                    value="sprint"
-                    checked={settings.pointsMetric === 'sprint'}
-                    onChange={handleChange}
-                    style={{ accentColor: 'var(--accent-blue)' }}
-                  />
-                  Points Sprint (ClickUp brut)
-                </label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {[
+                  { value: 'total', label: 'Points totaux (avec multiplicateur)' },
+                  { value: 'sprint', label: 'Points Sprint (ClickUp brut)' }
+                ].map((option) => (
+                  <label
+                    key={option.value}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '1rem',
+                      cursor: 'pointer',
+                      padding: '1rem',
+                      borderRadius: '12px',
+                      background: 'rgba(255, 255, 255, 0.03)',
+                      border: `1px solid ${settings.pointsMetric === option.value ? 'var(--accent-blue)' : 'var(--card-border)'}`,
+                      transition: 'all 0.2s ease',
+                      position: 'relative',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="pointsMetric"
+                      value={option.value}
+                      checked={settings.pointsMetric === option.value}
+                      onChange={handleChange}
+                      style={{ display: 'none' }}
+                    />
+                    <div style={{
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '50%',
+                      border: `2px solid ${settings.pointsMetric === option.value ? 'var(--accent-blue)' : 'var(--text-secondary)'}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
+                      {settings.pointsMetric === option.value && (
+                        <motion.div
+                          layoutId="metric-radio"
+                          style={{
+                            width: '10px',
+                            height: '10px',
+                            borderRadius: '50%',
+                            background: 'var(--accent-blue)'
+                          }}
+                        />
+                      )}
+                    </div>
+                    <span style={{ color: settings.pointsMetric === option.value ? 'white' : 'var(--text-secondary)', fontWeight: 500 }}>
+                      {option.label}
+                    </span>
+                    {settings.pointsMetric === option.value && (
+                      <div style={{
+                        position: 'absolute',
+                        inset: 0,
+                        background: 'var(--accent-blue)',
+                        opacity: 0.05,
+                        pointerEvents: 'none'
+                      }} />
+                    )}
+                  </label>
+                ))}
               </div>
             </div>
 
