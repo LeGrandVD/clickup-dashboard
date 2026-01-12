@@ -30,10 +30,10 @@ const Scorecard = ({ data, settings }) => {
               <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{data.metrics.totalWorkDays}</div>
           </div>
 
-           {/* Point par jour */}
+           {/* Point par semaine */}
           <div>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Point / jour</p>
-              <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{data.metrics.averagePointsPerDay}</div>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Point / semaine</p>
+              <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{data.metrics.averagePointsPerWeek}</div>
           </div>
           
            {/* Points à faire */}

@@ -361,7 +361,23 @@ export const useDashboardData = () => {
         // Metrics Calculation
         const annualTarget = (52 - vacationWeeks) * weeklyTarget;
         const annualRemaining = annualTarget - annualPointsTotal;
-        const averagePointsPerDay = totalWorkDays > 0 ? (annualPointsTotal / totalWorkDays).toFixed(1) : 0;
+
+        // Create a separate dataset for average calculation
+        // Check if today is Mon(1), Tue(2), Wed(3), or Thu(4)
+        const today = new Date();
+        const currentDay = today.getDay();
+        const isPartialWeek = currentDay >= 1 && currentDay < 5;
+        
+        // If it's a partial week (Mon-Thu), we exclude the current week (last entry) from the average
+        let weeksForAverage = [...weeklyBreakdown];
+        if (isPartialWeek && weeksForAverage.length > 0) {
+            weeksForAverage.pop();
+        }
+
+        const statsWeeksWorked = weeksForAverage.filter(w => w.points > 0).length;
+        const statsPointsTotal = weeksForAverage.reduce((acc, w) => acc + w.points, 0);
+
+        const averagePointsPerWeek = statsWeeksWorked > 0 ? (statsPointsTotal / statsWeeksWorked).toFixed(1) : 0;
         const vacationRemaining = vacationWeeks - holidaysTaken;
         
         const vacationWeeksUsed = weeklyBreakdown.filter(w => w.isHoliday).length;
@@ -384,7 +400,7 @@ export const useDashboardData = () => {
               annualTarget,
               totalPointsDone: annualPointsTotal,
               totalWorkDays,
-              averagePointsPerDay,
+              averagePointsPerWeek,
               annualRemaining,
               vacationRemaining,
               vacationWeeksUsed,
