@@ -459,7 +459,18 @@ const DashboardPage = () => {
                       }, {})
                     : { 'all': statusTasks };
 
-                  const sortedProjectKeys = Object.keys(tasksByProject).sort();
+                  // Calculate total points for each project within this status for sorting
+                  const projectPointsMap = Object.keys(tasksByProject).reduce((acc, project) => {
+                    acc[project] = tasksByProject[project].reduce((sum, t) => sum + (settings.pointsMetric === 'sprint' ? t.sprintPoints : t.points), 0);
+                    return acc;
+                  }, {});
+
+                  const sortedProjectKeys = Object.keys(tasksByProject).sort((a, b) => {
+                    // Sort by points descending
+                    const diff = projectPointsMap[b] - projectPointsMap[a];
+                    // If points are equal, sort alphabetically
+                    return diff !== 0 ? diff : a.localeCompare(b);
+                  });
 
                   return (
                     <div key={status} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
