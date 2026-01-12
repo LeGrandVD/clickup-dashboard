@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { RefreshCw, ListTodo, CheckCircle2, ChevronDown, Calendar, Target, Bug } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDashboardData } from '../hooks/useDashboardData';
@@ -30,9 +31,11 @@ const DashboardPage = () => {
   const [expandedStatuses, setExpandedStatuses] = useState({});
   const [showDebug, setShowDebug] = useState(false);
 
+  const navigate = useNavigate();
+
   const handleLogout = () => {
       localStorage.removeItem('clickup_access_token');
-      window.location.href = '/login';
+      navigate('/login');
   };
 
   const handleTaskClick = (task) => {
