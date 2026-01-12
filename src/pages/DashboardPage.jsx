@@ -95,7 +95,7 @@ const DashboardPage = () => {
       <header className="header-section" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Tableau de bord</h2>
+              <img src="/icon-192.png" alt="Logo" style={{ height: '3rem', width: 'auto', borderRadius: '20%' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginLeft: '0.5rem' }}>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500, textAlign: 'right' }}>
                     Multiplicateur
