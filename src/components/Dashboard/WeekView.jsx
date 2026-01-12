@@ -154,6 +154,16 @@ const WeekView = ({ data, currentDate, setCurrentDate }) => {
 
                 const dateStr = new Date(dayTasks[0].dateDone).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 
+                const handleTaskClick = (task) => {
+                    // Try to open in App first
+                    window.location.href = task.appUrl;
+                    
+                    // Fallback to web after a short delay
+                    setTimeout(() => {
+                        window.open(task.url, '_blank');
+                    }, 500);
+                };
+
                 return (
                     <div key={dayName} style={{ marginBottom: '2rem' }}>
                         <div style={{ 
@@ -172,15 +182,23 @@ const WeekView = ({ data, currentDate, setCurrentDate }) => {
                         
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                             {dayTasks.map(task => (
-                                <div key={task.id} style={{ 
+                                <div 
+                                    key={task.id} 
+                                    onClick={() => handleTaskClick(task)}
+                                    style={{ 
                                     display: 'flex', 
                                     justifyContent: 'space-between', 
                                     alignItems: 'center',
                                     padding: '0.75rem 1rem',
                                     background: 'rgba(255,255,255,0.02)',
                                     borderRadius: '8px',
-                                    border: '1px solid rgba(255,255,255,0.05)'
-                                }}>
+                                    border: '1px solid rgba(255,255,255,0.05)',
+                                    cursor: 'pointer',
+                                    transition: 'background 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
+                                >
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                                             {task.project && (

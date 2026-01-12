@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { RefreshCw, ListTodo, CheckCircle2, ChevronDown, Calendar } from 'lucide-react';
+import { RefreshCw, ListTodo, CheckCircle2, ChevronDown, Calendar, Target, Bug } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDashboardData } from '../hooks/useDashboardData';
 import SettingsModal from '../SettingsModal';
@@ -20,16 +20,29 @@ const DashboardPage = () => {
     setCurrentDate, 
     statusCheck, 
     rawData, 
-    fetchData 
+    fetchData,
+    debugOverride,
+    setDebugOverride
   } = useDashboardData();
 
   const [viewMode, setViewMode] = useState('dashboard'); // 'dashboard', 'week', 'year'
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [expandedStatuses, setExpandedStatuses] = useState({});
+  const [showDebug, setShowDebug] = useState(false);
 
   const handleLogout = () => {
       localStorage.removeItem('clickup_access_token');
       window.location.href = '/login';
+  };
+
+  const handleTaskClick = (task) => {
+      // Try to open in App first
+      window.location.href = task.appUrl;
+      
+      // Fallback to web after a short delay
+      setTimeout(() => {
+          window.open(task.url, '_blank');
+      }, 500);
   };
 
   const toggleStatus = (status) => {
@@ -175,26 +188,20 @@ const DashboardPage = () => {
               style={{ 
                   textAlign: 'center', 
                   marginBottom: '1.5rem',
-                  background: statusCheck.isUpToDate 
-                    ? 'linear-gradient(135deg, rgba(74, 222, 128, 0.1), rgba(34, 197, 94, 0.05))' 
-                    : 'rgba(255, 255, 255, 0.03)',
-                  border: statusCheck.isUpToDate 
-                    ? '1px solid rgba(74, 222, 128, 0.2)' 
-                    : '1px solid var(--card-border)'
+                  background: !statusCheck.isUpToDate
+                    ? 'rgba(255, 255, 255, 0.03)'
+                    : statusCheck.pointsToDoToday > 0
+                        ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.05))'
+                        : 'linear-gradient(135deg, rgba(74, 222, 128, 0.1), rgba(34, 197, 94, 0.05))',
+                  border: !statusCheck.isUpToDate
+                    ? '1px solid var(--card-border)'
+                    : statusCheck.pointsToDoToday > 0
+                        ? '1px solid rgba(59, 130, 246, 0.2)'
+                        : '1px solid rgba(74, 222, 128, 0.2)'
               }}
             >
               <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
-                  {statusCheck.isUpToDate ? (
-                     <div style={{ 
-                         width: '48px', height: '48px', 
-                         borderRadius: '50%', 
-                         background: 'rgba(74, 222, 128, 0.2)', 
-                         color: '#4ade80',
-                         display: 'flex', alignItems: 'center', justifyContent: 'center'
-                     }}>
-                         <CheckCircle2 size={24} />
-                     </div>
-                  ) : (
+                  {!statusCheck.isUpToDate ? (
                      <div style={{ 
                          width: '48px', height: '48px', 
                          borderRadius: '50%', 
@@ -204,33 +211,85 @@ const DashboardPage = () => {
                      }}>
                          <ListTodo size={24} />
                      </div>
+                  ) : statusCheck.pointsToDoToday > 0 ? (
+                     <div style={{ 
+                         width: '48px', height: '48px', 
+                         borderRadius: '50%', 
+                         background: 'rgba(59, 130, 246, 0.1)', 
+                         color: '#3b82f6',
+                         display: 'flex', alignItems: 'center', justifyContent: 'center'
+                     }}>
+                         <Target size={24} />
+                     </div>
+                  ) : (
+                     <div style={{ 
+                         width: '48px', height: '48px', 
+                         borderRadius: '50%', 
+                         background: 'rgba(74, 222, 128, 0.2)', 
+                         color: '#4ade80',
+                         display: 'flex', alignItems: 'center', justifyContent: 'center'
+                     }}>
+                         <CheckCircle2 size={24} />
+                     </div>
                   )}
               </div>
               
               <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
-                  {statusCheck.isUpToDate ? "Excellent rythme !" : "Action requise"}
+                  {!statusCheck.isUpToDate 
+                    ? "Action requise" 
+                    : statusCheck.pointsToDoToday > 0
+                        ? "Objectif du jour"
+                        : "Excellent rythme !"
+                  }
               </h3>
               
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1rem', lineHeight: '1.5' }}>
-                  {statusCheck.isUpToDate 
-                    ? "Vous êtes à jour dans vos objectifs de la semaine. Continuez comme ça !"
-                    : `Il vous manque ${Math.abs(Math.round(statusCheck.diff))} points pour être à jour sur votre semaine.`
+                  {!statusCheck.isUpToDate 
+                    ? `Il vous manque ${Math.abs(Math.round(statusCheck.diff))} points pour être à jour sur votre semaine.`
+                    : statusCheck.pointsToDoToday > 0
+                        ? `Vous avez ${Math.round(statusCheck.pointsToDoToday)} points à valider aujourd'hui.`
+                        : "Vous êtes à jour dans vos objectifs de la semaine. Continuez comme ça !"
                   }
               </p>
+
+              <div style={{ width: '100%', maxWidth: '240px', margin: '0 auto 1.5rem auto' }}>
+                <div style={{ 
+                    width: '100%', 
+                    height: '6px', 
+                    background: 'rgba(255,255,255,0.1)', 
+                    borderRadius: '100px', 
+                    overflow: 'hidden'
+                }}>
+                    <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.min(100, Math.max(0, (statusCheck.currentPoints / (statusCheck.expectedByEndOfToday || 1)) * 100))}%` }}
+                        transition={{ duration: 1, ease: "easeOut" }}
+                        style={{ 
+                            height: '100%', 
+                            background: !statusCheck.isUpToDate 
+                                ? '#ef4444' 
+                                : statusCheck.pointsToDoToday > 0 
+                                    ? '#3b82f6' 
+                                    : '#4ade80',
+                            borderRadius: '100px'
+                        }}
+                    />
+                </div>
+              </div>
 
                <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', fontSize: '0.875rem' }}>
                     <div style={{ textAlign: 'center' }}>
                         <span style={{ display: 'block', fontWeight: 600, color: statusCheck.isUpToDate ? '#4ade80' : 'var(--text-primary)' }}>
-                            {data.weeklyPoints}
+                            {statusCheck.currentPoints}
                         </span>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Fait</span>
                     </div>
                      <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
                     <div style={{ textAlign: 'center' }}>
                         <span style={{ display: 'block', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                            {Math.round(statusCheck.expectedPoints)}
+                            {Math.round(statusCheck.expectedByEndOfToday)}
                         </span>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Attendu</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Objectif</span>
                     </div>
                </div>
             </motion.div>
@@ -384,52 +443,61 @@ const DashboardPage = () => {
                           >
                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingBottom: '0.5rem' }}>
                                 {tasks.map(task => (
-                                  <div key={task.id} style={{ 
-                                    display: 'flex', 
-                                    justifyContent: 'space-between', 
-                                    alignItems: 'center', 
-                                    padding: '1rem', 
-                                    borderRadius: '8px',
-                                    background: 'rgba(255,255,255,0.03)',
-                                    border: '1px solid rgba(255,255,255,0.05)',
-                                    position: 'relative',
-                                    overflow: 'hidden'
-                                  }} className="task-card">
-                                      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: task.statusColor }}></div>
-                                      
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1, marginRight: '1rem' }}>
-                                         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                             {task.project && (
-                                                <span style={{ 
-                                                    fontSize: '0.625rem', 
-                                                    textTransform: 'uppercase', 
-                                                    letterSpacing: '0.05em', 
-                                                    color: 'var(--text-secondary)',
-                                                    border: '1px solid rgba(255,255,255,0.1)',
-                                                    padding: '2px 6px',
-                                                    borderRadius: '4px'
-                                                }}>
-                                                    {task.project}
-                                                </span>
-                                             )}
-                                             <span style={{ fontSize: '0.625rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>#{task.customId || task.id.slice(0,5)}</span>
-                                         </div>
-                                         <span style={{ fontWeight: 500, fontSize: '0.9375rem', lineHeight: '1.4' }}>{task.name}</span>
-                                      </div>
-                                      
-                                      <div style={{ 
-                                          background: 'rgba(255,255,255,0.05)', 
-                                          padding: '0.25rem 0.75rem', 
-                                          borderRadius: '100px', 
-                                          fontSize: '0.875rem', 
-                                          fontWeight: 600,
-                                          color: 'var(--accent-blue)',
-                                          minWidth: '3rem',
-                                          textAlign: 'center'
-                                      }}>
-                                          {task.points}
-                                      </div>
-                                  </div>
+                                    <div 
+                                      key={task.id} 
+                                      onClick={() => handleTaskClick(task)}
+                                      style={{ 
+                                      display: 'flex', 
+                                      justifyContent: 'space-between', 
+                                      alignItems: 'center', 
+                                      padding: '1rem', 
+                                      borderRadius: '8px',
+                                      background: 'rgba(255,255,255,0.03)',
+                                      border: '1px solid rgba(255,255,255,0.05)',
+                                      position: 'relative',
+                                      overflow: 'hidden',
+                                      cursor: 'pointer',
+                                      transition: 'background 0.2s ease'
+                                    }} 
+                                    className="task-card"
+                                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                                    >
+                                        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: task.statusColor }}></div>
+                                        
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1, marginRight: '1rem' }}>
+                                           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                               {task.project && (
+                                                  <span style={{ 
+                                                      fontSize: '0.625rem', 
+                                                      textTransform: 'uppercase', 
+                                                      letterSpacing: '0.05em', 
+                                                      color: 'var(--text-secondary)',
+                                                      border: '1px solid rgba(255,255,255,0.1)',
+                                                      padding: '2px 6px',
+                                                      borderRadius: '4px'
+                                                  }}>
+                                                      {task.project}
+                                                  </span>
+                                               )}
+                                               <span style={{ fontSize: '0.625rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>#{task.customId || task.id.slice(0,5)}</span>
+                                           </div>
+                                           <span style={{ fontWeight: 500, fontSize: '0.9375rem', lineHeight: '1.4' }}>{task.name}</span>
+                                        </div>
+                                        
+                                        <div style={{ 
+                                            background: 'rgba(255,255,255,0.05)', 
+                                            padding: '0.25rem 0.75rem', 
+                                            borderRadius: '100px', 
+                                            fontSize: '0.875rem', 
+                                            fontWeight: 600,
+                                            color: 'var(--accent-blue)',
+                                            minWidth: '3rem',
+                                            textAlign: 'center'
+                                        }}>
+                                            {task.points}
+                                        </div>
+                                    </div>
                                 ))}
                              </div>
                           </motion.div>
@@ -445,6 +513,92 @@ const DashboardPage = () => {
           </motion.div>
       </motion.div>
       )}
+
+      {/* DEBUG PANEL */}
+      {import.meta.env.DEV && (
+       <div style={{ position: 'fixed', bottom: '1rem', right: '1rem', zIndex: 1000 }}>
+           <button 
+                onClick={() => setShowDebug(!showDebug)}
+                style={{ 
+                    background: 'rgba(0,0,0,0.5)', 
+                    color: 'white', 
+                    border: 'none', 
+                    padding: '0.5rem', 
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                }}
+            >
+               <Bug size={20} />
+            </button>
+            {showDebug && (
+                <div style={{ 
+                    position: 'absolute', 
+                    bottom: '3rem', 
+                    right: 0, 
+                    background: '#1e293b', 
+                    padding: '1rem', 
+                    borderRadius: '8px', 
+                    border: '1px solid #334155',
+                    width: '300px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                }}>
+                    <h4 style={{ marginBottom: '1rem', fontWeight: 600 }}>Debug Status</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', marginBottom: '0.25rem', color: '#94a3b8' }}>
+                                Fake Current Day (1=Mon, 5=Fri)
+                            </label>
+                            <select 
+                                value={debugOverride.day ?? ''} 
+                                onChange={(e) => setDebugOverride(prev => ({ ...prev, day: e.target.value ? parseInt(e.target.value) : null }))}
+                                style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', background: '#0f172a', border: '1px solid #334155', color: 'white' }}
+                            >
+                                <option value="">Real Day</option>
+                                <option value="1">Lundi</option>
+                                <option value="2">Mardi</option>
+                                <option value="3">Mercredi</option>
+                                <option value="4">Jeudi</option>
+                                <option value="5">Vendredi</option>
+                                <option value="6">Samedi</option>
+                                <option value="7">Dimanche</option>
+                            </select>
+                        </div>
+                         <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', marginBottom: '0.25rem', color: '#94a3b8' }}>
+                                Fake Weekly Points
+                            </label>
+                            <input 
+                                type="number" 
+                                value={debugOverride.points ?? ''} 
+                                placeholder={`Real: ${data.weeklyPoints}`}
+                                onChange={(e) => setDebugOverride(prev => ({ ...prev, points: e.target.value ? parseFloat(e.target.value) : null }))}
+                                style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', background: '#0f172a', border: '1px solid #334155', color: 'white' }}
+                            />
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', marginBottom: '0.25rem', color: '#94a3b8' }}>
+                                Fake Hour (0-23)
+                            </label>
+                            <input 
+                                type="number" 
+                                min="0" max="23"
+                                value={debugOverride.hour ?? ''} 
+                                placeholder={`Real: ${new Date().getHours()}h`}
+                                onChange={(e) => setDebugOverride(prev => ({ ...prev, hour: e.target.value ? parseInt(e.target.value) : null }))}
+                                style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', background: '#0f172a', border: '1px solid #334155', color: 'white' }}
+                            />
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.5rem',  borderTop: '1px solid #334155', paddingTop: '0.5rem' }}>
+                            Expected (Passed): {Math.round(statusCheck.expectedPoints)}<br/>
+                            Expected (End of Day): {Math.round(statusCheck.expectedByEndOfToday)}<br/>
+                            To Do Today: {Math.round(statusCheck.pointsToDoToday)}
+                        </div>
+                    </div>
+                </div>
+            )}
+       </div>
+      )}
+
     </div>
   );
 };

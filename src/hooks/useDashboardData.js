@@ -202,7 +202,10 @@ export const useDashboardData = () => {
             statusColor: task.status.color,
             project: projectInfo, 
             customId: task.custom_id,
-            dateDone: task.date_closed ? parseInt(task.date_closed) : null 
+            customId: task.custom_id,
+            dateDone: task.date_closed ? parseInt(task.date_closed) : null,
+            url: task.url || `https://app.clickup.com/t/${task.id}`,
+            appUrl: `clickup://t/${task.id}` 
           };
         });
     
@@ -268,7 +271,10 @@ export const useDashboardData = () => {
               project,
               points,
               isClosed: task.status.type === 'closed' || task.status.status === 'closed' || task.status.status === 'complete' || task.status.status === 'livré', 
-              dateDone: task.date_closed ? parseInt(task.date_closed) : (task.date_done ? parseInt(task.date_done) : null)
+              isClosed: task.status.type === 'closed' || task.status.status === 'closed' || task.status.status === 'complete' || task.status.status === 'livré', 
+              dateDone: task.date_closed ? parseInt(task.date_closed) : (task.date_done ? parseInt(task.date_done) : null),
+              url: task.url || `https://app.clickup.com/t/${task.id}`,
+              appUrl: `clickup://t/${task.id}`
           };
         });
     
@@ -382,17 +388,37 @@ export const useDashboardData = () => {
     
       }, [rawData, settings]);
 
+    const [debugOverride, setDebugOverride] = useState({ points: null, day: null, hour: null });
+
       // Status Check Logic
       const getStatusCheck = () => {
         const today = new Date();
-        const currentIsoDay = today.getDay() || 7; // 1=Mon, 7=Sun
-        const workDaysPassed = Math.min(currentIsoDay, 4); 
+        const currentHour = debugOverride.hour !== null ? debugOverride.hour : today.getHours();
+
+        // Check if we should expect points for today (after 1pm / 13h)
+        const currentIsoDay = debugOverride.day !== null ? debugOverride.day : (today.getDay() || 7);
+        const currentWeeklyPoints = debugOverride.points !== null ? debugOverride.points : data.weeklyPoints;
         
-        const expectedPoints = (settings.weeklyTarget / 4) * workDaysPassed;
-        const isUpToDate = data.weeklyPoints >= expectedPoints - 1; // 1 point buffer
-        const diff = data.weeklyPoints - expectedPoints;
+        const workDaysPassed = Math.min(Math.max(0, currentIsoDay - 1), 4);
         
-        return { isUpToDate, expectedPoints, diff, currentIsoDay };
+        let pointsAddedForToday = 0;
+        // If it's a weekday and after 13:00, expect half the daily points
+        if (currentIsoDay >= 1 && currentIsoDay <= 5 && currentHour >= 13) {
+             pointsAddedForToday = 0.5;
+        }
+
+        const pointsPerDay = settings.weeklyTarget / 4;
+        const expectedPoints = pointsPerDay * (workDaysPassed + pointsAddedForToday);
+        
+        // Calculate points expected by END of today to see what is left to do today
+        const workDaysIncludingToday = Math.min(currentIsoDay, 4);
+        const expectedByEndOfToday = pointsPerDay * workDaysIncludingToday;
+        const pointsToDoToday = Math.max(0, expectedByEndOfToday - currentWeeklyPoints);
+
+        const isUpToDate = currentWeeklyPoints >= expectedPoints - 1; // 1 point buffer
+        const diff = currentWeeklyPoints - expectedPoints;
+        
+        return { isUpToDate, expectedPoints, diff, currentIsoDay, pointsToDoToday, expectedByEndOfToday, currentPoints: currentWeeklyPoints, currentHour };
       };
 
     return {
@@ -404,6 +430,8 @@ export const useDashboardData = () => {
         setCurrentDate,
         statusCheck: getStatusCheck(),
         rawData,
-        fetchData: () => fetchData(accessToken)
+        fetchData: () => fetchData(accessToken),
+        debugOverride, 
+        setDebugOverride
     };
 };
