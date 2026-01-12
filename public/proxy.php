@@ -81,17 +81,27 @@ if ($path === 'sprint') {
 } else if ($path === 'user') {
     $apiUrl = "https://api.clickup.com/api/v2/user";
 
+} else if ($path === 'list_tasks') {
+    $listId = isset($_GET['listId']) ? $_GET['listId'] : '';
+    $page = isset($_GET['page']) ? $_GET['page'] : '0';
+    $apiUrl = "https://api.clickup.com/api/v2/list/$listId/task?include_closed=true&subtasks=true&page=$page";
+
 } else if ($path === 'my_tasks') {
     $teamId = isset($_GET['teamId']) ? $_GET['teamId'] : '';
     $userId = isset($_GET['userId']) ? $_GET['userId'] : '';
     $page = isset($_GET['page']) ? $_GET['page'] : '0';
+    $include_closed = isset($_GET['include_closed']) && $_GET['include_closed'] === 'false' ? 'false' : 'true';
+    $date_done_gt = isset($_GET['date_done_gt']) ? $_GET['date_done_gt'] : '';
     
     if (!$teamId || !$userId) {
         http_response_code(400);
         echo json_encode(['error' => 'Missing teamId or userId']);
         exit;
     }
-    $apiUrl = "https://api.clickup.com/api/v2/team/$teamId/task?assignees[]=$userId&page=$page&include_closed=true&subtasks=true";
+    $apiUrl = "https://api.clickup.com/api/v2/team/$teamId/task?assignees[]=$userId&page=$page&include_closed=$include_closed&subtasks=true";
+    if ($date_done_gt) {
+        $apiUrl .= "&date_done_gt=$date_done_gt";
+    }
 } else {
     http_response_code(400);
     echo json_encode(['error' => 'Invalid path parameter']);
