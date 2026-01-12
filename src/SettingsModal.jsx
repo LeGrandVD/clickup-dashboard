@@ -13,7 +13,7 @@ const SettingsModal = ({ isOpen, onClose, onSave, initialSettings }) => {
     const { name, value } = e.target;
     setSettings(prev => ({
       ...prev,
-      [name]: parseFloat(value) || 0
+      [name]: (name === 'openLinksIn') ? value : (parseFloat(value) || 0)
     }));
   };
 
@@ -117,6 +117,36 @@ const SettingsModal = ({ isOpen, onClose, onSave, initialSettings }) => {
                   fontSize: '1rem'
                 }}
               />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                Comportement des liens
+              </label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
+                  <input
+                    type="radio"
+                    name="openLinksIn"
+                    value="app"
+                    checked={settings.openLinksIn !== 'web'} // Default to app
+                    onChange={handleChange}
+                    style={{ accentColor: 'var(--accent-blue)' }}
+                  />
+                  Application de bureau (clickup://)
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
+                  <input
+                    type="radio"
+                    name="openLinksIn"
+                    value="web"
+                    checked={settings.openLinksIn === 'web'}
+                    onChange={handleChange}
+                    style={{ accentColor: 'var(--accent-blue)' }}
+                  />
+                  Navigateur Web (https://)
+                </label>
+              </div>
             </div>
 
             <button

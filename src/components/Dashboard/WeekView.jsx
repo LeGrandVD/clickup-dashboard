@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, ListTodo, CheckCircle2, Calendar } from 'luc
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { getWeekRange } from '../../hooks/useDashboardData';
 
-const WeekView = ({ data, currentDate, setCurrentDate }) => {
+const WeekView = ({ data, currentDate, setCurrentDate, settings }) => {
   return (
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
          
@@ -155,13 +155,11 @@ const WeekView = ({ data, currentDate, setCurrentDate }) => {
                 const dateStr = new Date(dayTasks[0].dateDone).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 
                 const handleTaskClick = (task) => {
-                    // Try to open in App first
-                    window.location.href = task.appUrl;
-                    
-                    // Fallback to web after a short delay
-                    setTimeout(() => {
+                    if (settings && settings.openLinksIn === 'web') {
                         window.open(task.url, '_blank');
-                    }, 500);
+                    } else {
+                        window.location.href = task.appUrl;
+                    }
                 };
 
                 return (

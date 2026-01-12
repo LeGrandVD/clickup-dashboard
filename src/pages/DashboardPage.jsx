@@ -39,13 +39,11 @@ const DashboardPage = () => {
   };
 
   const handleTaskClick = (task) => {
-      // Try to open in App first
+    if (settings.openLinksIn === 'web') {
+      window.open(task.url, '_blank');
+    } else {
       window.location.href = task.appUrl;
-      
-      // Fallback to web after a short delay
-      setTimeout(() => {
-          window.open(task.url, '_blank');
-      }, 500);
+    }
   };
 
   const toggleStatus = (status) => {
@@ -175,7 +173,7 @@ const DashboardPage = () => {
 
       {/* --- VIEW: WEEK (Daily Chart + Detail) --- */}
       {viewMode === 'week' && (
-          <WeekView data={data} currentDate={currentDate} setCurrentDate={setCurrentDate} />
+          <WeekView data={data} currentDate={currentDate} setCurrentDate={setCurrentDate} settings={settings} />
       )}
 
       {/* --- VIEW: DASHBOARD (Overview) --- */}
