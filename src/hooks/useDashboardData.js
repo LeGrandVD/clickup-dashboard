@@ -69,7 +69,7 @@ export const useDashboardData = () => {
     
     const [settings, setSettings] = useState(() => {
       const saved = localStorage.getItem('dashboardSettings');
-      return saved ? JSON.parse(saved) : { weeklyTarget: 28, vacationWeeks: 4, openLinksIn: 'app' };
+      return saved ? JSON.parse(saved) : { weeklyTarget: 28, vacationWeeks: 4, openLinksIn: 'app', pointsMetric: 'total' };
     });
   
     const saveSettings = (newSettings) => {
@@ -183,13 +183,15 @@ export const useDashboardData = () => {
             return isHomeList || isSecondaryList;
         }).map(task => {
           const totalPointsField = task.custom_fields?.find(f => f.id === 'c080dbb1-90fc-4095-ac30-2d05d20b821a');
-          let points = 0;
+          let totalPointsValue = 0;
           if (totalPointsField && totalPointsField.value != null) {
-             points = parseFloat(totalPointsField.value) || 0;
+             totalPointsValue = parseFloat(totalPointsField.value) || 0;
           }
-          if (points === 0 && task.points) {
-              points = task.points;
+          if (totalPointsValue === 0 && task.points) {
+              totalPointsValue = task.points;
           }
+
+          let points = settings.pointsMetric === 'sprint' ? (task.points || 0) : totalPointsValue;
           
           const folderName = task.folder && !task.folder.hidden ? task.folder.name : null;
           const listName = task.list.name;
@@ -204,10 +206,11 @@ export const useDashboardData = () => {
             statusColor: task.status.color,
             project: projectInfo, 
             customId: task.custom_id,
-            customId: task.custom_id,
             dateDone: task.date_closed ? parseInt(task.date_closed) : null,
             url: task.url || `https://app.clickup.com/t/${task.id}`,
-            appUrl: `clickup://t/${task.id}` 
+            appUrl: `clickup://t/${task.id}`,
+            sprintPoints: task.points || 0,
+            totalPoints: totalPointsValue
           };
         });
     
@@ -255,13 +258,15 @@ export const useDashboardData = () => {
         // 2. Process Logic for Weekly/Yearly Stats
         const processedAllTasks = allTasks.map(task => {
            const totalPointsField = task.custom_fields?.find(f => f.id === 'c080dbb1-90fc-4095-ac30-2d05d20b821a');
-          let points = 0;
+          let totalPointsValue = 0;
           if (totalPointsField && totalPointsField.value != null) {
-             points = parseFloat(totalPointsField.value) || 0;
+             totalPointsValue = parseFloat(totalPointsField.value) || 0;
           }
-          if (points === 0 && task.points) {
-              points = task.points;
+          if (totalPointsValue === 0 && task.points) {
+              totalPointsValue = task.points;
           }
+
+          let points = settings.pointsMetric === 'sprint' ? (task.points || 0) : totalPointsValue;
     
           const folderName = task.folder && !task.folder.hidden ? task.folder.name : null;
           const listName = task.list.name;
@@ -273,10 +278,11 @@ export const useDashboardData = () => {
               project,
               points,
               isClosed: task.status.type === 'closed' || task.status.status === 'closed' || task.status.status === 'complete' || task.status.status === 'livré', 
-              isClosed: task.status.type === 'closed' || task.status.status === 'closed' || task.status.status === 'complete' || task.status.status === 'livré', 
               dateDone: task.date_closed ? parseInt(task.date_closed) : (task.date_done ? parseInt(task.date_done) : null),
               url: task.url || `https://app.clickup.com/t/${task.id}`,
-              appUrl: `clickup://t/${task.id}`
+              appUrl: `clickup://t/${task.id}`,
+              sprintPoints: task.points || 0,
+              totalPoints: totalPointsValue
           };
         });
     

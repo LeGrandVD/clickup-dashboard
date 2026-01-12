@@ -94,8 +94,43 @@ const DashboardPage = () => {
 
       <header className="header-section" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Tableau de bord</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginLeft: '0.5rem' }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500, textAlign: 'right' }}>
+                    Multiplicateur
+                </span>
+                <button 
+                    onClick={() => saveSettings({ ...settings, pointsMetric: settings.pointsMetric === 'sprint' ? 'total' : 'sprint' })}
+                    style={{
+                        width: '44px',
+                        height: '24px',
+                        background: settings.pointsMetric === 'total' ? '#4ade80' : 'rgba(255,255,255,0.2)',
+                        borderRadius: '99px',
+                        position: 'relative',
+                        cursor: 'pointer',
+                        border: 'none',
+                        padding: '2px',
+                        transition: 'background 0.3s ease',
+                        display: 'flex',
+                        alignItems: 'center'
+                    }}
+                >
+                    <motion.div 
+                        animate={{ 
+                            x: settings.pointsMetric === 'total' ? 20 : 0
+                        }}
+                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                        style={{
+                            width: '20px',
+                            height: '20px',
+                            background: 'white',
+                            borderRadius: '50%',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                        }}
+                    />
+                </button>
+            </div>
             </div>
             <div style={{ display: 'flex', gap: '0.75rem' }}>
               <button onClick={fetchData} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
@@ -383,15 +418,21 @@ const DashboardPage = () => {
             className="glass-card dashboard-tasks"
             style={{ padding: '1rem' }}
           >
-            <h3 style={{ fontSize: '1.125rem', marginBottom: '1rem', textAlign: 'left' }}>Tâches du sprint</h3>
+            <h3 style={{ fontSize: '1.125rem', marginBottom: '1rem', textAlign: 'left', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span>Tâches du sprint</span>
+            </h3>
             
             {Object.keys(groupedTasks).length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {sortedStatusKeys.map(status => {
                   const { tasks: unsortedTasks, color } = groupedTasks[status];
-                  const tasks = [...unsortedTasks].sort((a, b) => b.points - a.points);
+                  const tasks = [...unsortedTasks].sort((a, b) => {
+                      const pointsA = settings.pointsMetric === 'sprint' ? a.sprintPoints : a.points;
+                      const pointsB = settings.pointsMetric === 'sprint' ? b.sprintPoints : b.points;
+                      return pointsB - pointsA;
+                  });
                   const isExpanded = !!expandedStatuses[status]; // Default false
-                  const groupPoints = tasks.reduce((acc, t) => acc + t.points, 0);
+                  const groupPoints = tasks.reduce((acc, t) => acc + (settings.pointsMetric === 'sprint' ? t.sprintPoints : t.points), 0);
 
                   return (
                     <div key={status} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -496,7 +537,7 @@ const DashboardPage = () => {
                                             minWidth: '3rem',
                                             textAlign: 'center'
                                         }}>
-                                            {task.points}
+                                            {settings.pointsMetric === 'sprint' ? task.sprintPoints : task.points}
                                         </div>
                                     </div>
                                 ))}

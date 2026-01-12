@@ -13,7 +13,7 @@ const SettingsModal = ({ isOpen, onClose, onSave, initialSettings }) => {
     const { name, value } = e.target;
     setSettings(prev => ({
       ...prev,
-      [name]: (name === 'openLinksIn') ? value : (parseFloat(value) || 0)
+      [name]: (name === 'openLinksIn' || name === 'pointsMetric') ? value : (parseFloat(value) || 0)
     }));
   };
 
@@ -145,6 +145,36 @@ const SettingsModal = ({ isOpen, onClose, onSave, initialSettings }) => {
                     style={{ accentColor: 'var(--accent-blue)' }}
                   />
                   Navigateur Web (https://)
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                Affichage des points
+              </label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
+                  <input
+                    type="radio"
+                    name="pointsMetric"
+                    value="total"
+                    checked={settings.pointsMetric !== 'sprint'} // Default to total
+                    onChange={handleChange}
+                    style={{ accentColor: 'var(--accent-blue)' }}
+                  />
+                  Points totaux (avec multiplicateur)
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
+                  <input
+                    type="radio"
+                    name="pointsMetric"
+                    value="sprint"
+                    checked={settings.pointsMetric === 'sprint'}
+                    onChange={handleChange}
+                    style={{ accentColor: 'var(--accent-blue)' }}
+                  />
+                  Points Sprint (ClickUp brut)
                 </label>
               </div>
             </div>
