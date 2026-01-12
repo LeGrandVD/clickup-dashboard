@@ -99,16 +99,37 @@ export const useDashboardData = () => {
           const userRes = await axios.get(`${proxyUrl}?path=user`, { headers });
           const currentUser = userRes.data.user;
     
-          // 3. Get My Tasks
-          let allTasks = [];
-          let page = 0;
+          // 3. Get Open Tasks (All active assignments)
+          // Open tasks are usually fewer than closed history, so we fetch all to ensure nothing is missed.
+          const openParam = `&include_closed=false`; 
+          let openTasks = [];
+          let p1 = 0;
           while (true) {
-              const tasksRes = await axios.get(`${proxyUrl}?path=my_tasks&teamId=${teamId}&userId=${currentUser.id}&page=${page}`, { headers });
-              allTasks = [...allTasks, ...tasksRes.data.tasks];
-              if (tasksRes.data.last_page) break;
-              page++;
+              const res = await axios.get(`${proxyUrl}?path=my_tasks&teamId=${teamId}&userId=${currentUser.id}&page=${p1}${openParam}`, { headers });
+              openTasks = [...openTasks, ...res.data.tasks];
+              if (res.data.last_page) break;
+              p1++;
+          }
+
+          // 4. Get Closed Tasks (Recent only)
+          // We only need statistics for this year.
+          const startOfYear = new Date(new Date().getFullYear(), 0, 1).getTime();
+          const closedParam = `&include_closed=true&date_done_gt=${startOfYear}`;
+          let closedTasks = [];
+          let p2 = 0;
+          while (true) {
+              const res = await axios.get(`${proxyUrl}?path=my_tasks&teamId=${teamId}&userId=${currentUser.id}&page=${p2}${closedParam}`, { headers });
+              closedTasks = [...closedTasks, ...res.data.tasks];
+              if (res.data.last_page) break;
+              p2++;
           }
     
+          // Combine tasks, removing duplicates by ID (just in case)
+          const allTasksMap = new Map();
+          openTasks.forEach(t => allTasksMap.set(t.id, t));
+          closedTasks.forEach(t => allTasksMap.set(t.id, t));
+          const allTasks = Array.from(allTasksMap.values());
+
           setRawData({
             latestSprint,
             currentUser,

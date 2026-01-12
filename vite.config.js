@@ -74,11 +74,20 @@ export default defineConfig(({ mode }) => {
                 const viewId = urlParams.get('viewId')
                 const page = urlParams.get('page') || 0
                 apiUrl = `https://api.clickup.com/api/v2/view/${viewId}/task?page=${page}&include_closed=true`
+              } else if (path === 'list_tasks') {
+                const page = urlParams.get('page') || 0
+                apiUrl = `https://api.clickup.com/api/v2/list/${listId}/task?include_closed=true&subtasks=true&page=${page}`
               } else if (path === 'my_tasks') {
                 const teamId = env.VITE_CLICKUP_TEAM_ID
                 const userId = urlParams.get('userId')
                 const page = urlParams.get('page') || 0
-                apiUrl = `https://api.clickup.com/api/v2/team/${teamId}/task?assignees[]=${userId}&page=${page}&include_closed=true&subtasks=true`
+                const include_closed = urlParams.get('include_closed') !== 'false'
+                const date_done_gt = urlParams.get('date_done_gt')
+
+                apiUrl = `https://api.clickup.com/api/v2/team/${teamId}/task?assignees[]=${userId}&page=${page}&include_closed=${include_closed}&subtasks=true`
+                if (date_done_gt) {
+                    apiUrl += `&date_done_gt=${date_done_gt}`
+                }
               } else if (path === 'user') {
                 apiUrl = `https://api.clickup.com/api/v2/user`
               }

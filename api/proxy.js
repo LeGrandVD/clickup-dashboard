@@ -37,7 +37,18 @@ export default async function handler(req, res) {
         const teamId = req.query.teamId;
         const userId = req.query.userId;
         const page = req.query.page || 0;
-        url = `https://api.clickup.com/api/v2/team/${teamId}/task?assignees[]=${userId}&page=${page}&include_closed=true&subtasks=true`;
+        const date_done_gt = req.query.date_done_gt;
+        // Default to true if not specified
+        const include_closed = req.query.include_closed !== 'false'; 
+        
+        url = `https://api.clickup.com/api/v2/team/${teamId}/task?assignees[]=${userId}&page=${page}&include_closed=${include_closed}&subtasks=true`;
+        if (date_done_gt) {
+            url += `&date_done_gt=${date_done_gt}`;
+        }
+    } else if (path === 'list_tasks') {
+        const listId = req.query.listId;
+        const page = req.query.page || 0;
+        url = `https://api.clickup.com/api/v2/list/${listId}/task?include_closed=true&subtasks=true&page=${page}`;
     } else if (path === 'user') {
         url = `https://api.clickup.com/api/v2/user`;
     }
