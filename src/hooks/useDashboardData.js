@@ -35,13 +35,15 @@ export const getWeekRange = (dateObj = new Date()) => {
   return { start: startOfWeek.getTime(), end: endOfWeek.getTime() };
 };
 
-// Helper to get ISO week number
 export const getISOWeekNumber = (d) => {
-  const date = new Date(d.valueOf());
-  const dayNum = date.getUTCDay() || 7;
-  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(date.getUTCFullYear(),0,1));
-  return Math.ceil((((date - yearStart) / 86400000) + 1)/7);
+  const date = new Date(d);
+  date.setHours(0, 0, 0, 0);
+  // Thursday in current week decides the year.
+  // 0 = Sunday, 1 = Monday.
+  const dayNum = date.getDay() || 7;
+  date.setDate(date.getDate() + 4 - dayNum);
+  const yearStart = new Date(date.getFullYear(), 0, 1);
+  return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
 };
 
 // Helper to get date of ISO week start (Monday)
