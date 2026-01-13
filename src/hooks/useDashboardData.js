@@ -460,7 +460,7 @@ export const useDashboardData = () => {
         const expectedByEndOfToday = pointsPerDay * workDaysIncludingToday;
         const pointsToDoToday = Math.max(0, expectedByEndOfToday - currentWeeklyPoints);
 
-        const isUpToDate = currentWeeklyPoints >= expectedPoints - 1; // 1 point buffer
+        const isUpToDate = currentWeeklyPoints >= expectedPoints;
         const diff = currentWeeklyPoints - expectedPoints;
         
         return { isUpToDate, expectedPoints, diff, currentIsoDay, pointsToDoToday, expectedByEndOfToday, currentPoints: currentWeeklyPoints, currentHour };
