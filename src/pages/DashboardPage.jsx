@@ -281,7 +281,7 @@ const DashboardPage = () => {
               
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1rem', lineHeight: '1.5' }}>
                   {!statusCheck.isUpToDate 
-                    ? `Il vous manque ${Math.abs(Math.round(statusCheck.diff))} points pour être à jour sur votre semaine.`
+                    ? `Il vous manque ${Math.abs(Math.round(statusCheck.diff))} points pour être à jour sur votre semaine. Objectif total pour aujourd'hui : ${Math.round(statusCheck.pointsToDoToday)} points.`
                     : statusCheck.pointsToDoToday > 0
                         ? `Vous avez ${Math.round(statusCheck.pointsToDoToday)} points à valider aujourd'hui.`
                         : "Vous êtes à jour dans vos objectifs de la semaine. Continuez comme ça !"
