@@ -322,9 +322,9 @@ const DashboardPage = () => {
               
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1rem', lineHeight: '1.5' }}>
                   {!statusCheck.isUpToDate 
-                    ? `Il vous manque ${Math.abs(Math.round(statusCheck.diff))} points pour être à jour sur votre semaine. Objectif total pour aujourd'hui : ${Math.round(statusCheck.pointsToDoToday)} points.`
+                    ? `Il vous manque ${Math.abs(Math.round(statusCheck.diff * 4) / 4)} points pour être à jour sur votre semaine. Objectif total pour aujourd'hui : ${Math.round(statusCheck.pointsToDoToday * 4) / 4} points.`
                     : statusCheck.pointsToDoToday > 0
-                        ? `Vous avez ${Math.round(statusCheck.pointsToDoToday)} points à valider aujourd'hui.`
+                        ? `Vous avez ${Math.round(statusCheck.pointsToDoToday * 4) / 4} points à valider aujourd'hui.`
                         : "Vous êtes à jour dans vos objectifs de la semaine. Continuez comme ça !"
                   }
               </p>
@@ -357,14 +357,14 @@ const DashboardPage = () => {
                <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', fontSize: '0.875rem' }}>
                     <div style={{ textAlign: 'center' }}>
                         <span style={{ display: 'block', fontWeight: 600, color: statusCheck.isUpToDate ? '#4ade80' : 'var(--text-primary)' }}>
-                            {statusCheck.currentPoints}
+                            {Math.round(statusCheck.currentPoints * 4) / 4}
                         </span>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Fait</span>
                     </div>
                      <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
                     <div style={{ textAlign: 'center' }}>
                         <span style={{ display: 'block', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                            {Math.round(statusCheck.expectedByEndOfToday)}
+                            {Math.round(statusCheck.expectedByEndOfToday * 4) / 4}
                         </span>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Objectif</span>
                     </div>

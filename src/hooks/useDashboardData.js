@@ -179,7 +179,7 @@ export const useDashboardData = () => {
             }
         });
     
-        weeklyPointsCurrent = Math.round(weeklyPointsCurrent * 2) / 2;
+        weeklyPointsCurrent = Math.round(weeklyPointsCurrent * 4) / 4;
     
         setData(prev => ({
             ...prev,
@@ -250,8 +250,8 @@ export const useDashboardData = () => {
           }
         });
     
-        completed = Math.round(completed * 2) / 2;
-        total = Math.round(total * 2) / 2;
+        completed = Math.round(completed * 4) / 4;
+        total = Math.round(total * 4) / 4;
         
         const taskListData = tasks;
         const dueDate = latestSprint.due_date ? parseInt(latestSprint.due_date) : null;
@@ -343,7 +343,7 @@ export const useDashboardData = () => {
             }
         });
         
-        weeklyPointsCurrent = Math.round(weeklyPointsCurrent * 2) / 2;
+        weeklyPointsCurrent = Math.round(weeklyPointsCurrent * 4) / 4;
     
         // Build Sprint Table Data
         const weeklyBreakdown = [];
@@ -353,7 +353,7 @@ export const useDashboardData = () => {
         
         for (let i = 1; i <= currentWeekNum; i++) {
             const data = weeklyDataMap[i] || { points: 0, days: new Set() };
-            const points = Math.round(data.points * 2) / 2;
+            const points = Math.round(data.points * 4) / 4;
             const workDays = data.days.size;
             
             let target = weeklyTarget; 
