@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RefreshCw, ListTodo, CheckCircle2, ChevronDown, Calendar, Target, Bug, Folder, Calculator, CheckSquare, Square, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { RefreshCw, ListTodo, CheckCircle2, ChevronDown, Calendar, Target, Bug, Folder, Calculator, CheckSquare, Square, X, GripVertical } from 'lucide-react';
+import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { useDashboardData } from '../hooks/useDashboardData';
 import SettingsModal from '../SettingsModal';
 import UserMenu from '../components/UserMenu';
@@ -12,6 +12,7 @@ import SprintHistoryTable from '../components/Dashboard/SprintHistoryTable';
 import WeekView from '../components/Dashboard/WeekView';
 
 const DashboardPage = () => {
+  const isDragging = React.useRef(false);
   const { 
     data, 
     loading, 
@@ -38,7 +39,12 @@ const DashboardPage = () => {
   });
   const [selectedTaskIds, setSelectedTaskIds] = useState(() => {
       const saved = localStorage.getItem('dashboard_selected_tasks');
-      return saved ? new Set(JSON.parse(saved)) : new Set();
+      // Ensure we always have an array, even if migrating from Set logic (JSON.parse of Set string might need care if it was stored as object, but previously it was stored as Array.from(set) so it's ALREADY an array in localStorage)
+      try {
+          return saved ? JSON.parse(saved) : [];
+      } catch (e) {
+          return [];
+      }
   });
 
   // Persistence Effects
@@ -47,7 +53,7 @@ const DashboardPage = () => {
   }, [isSelectionMode]);
 
   React.useEffect(() => {
-      localStorage.setItem('dashboard_selected_tasks', JSON.stringify(Array.from(selectedTaskIds)));
+      localStorage.setItem('dashboard_selected_tasks', JSON.stringify(selectedTaskIds));
   }, [selectedTaskIds]);
 
   const navigate = useNavigate();
@@ -75,13 +81,11 @@ const DashboardPage = () => {
   // Helper to toggle task selection
   const toggleTaskSelection = (taskId) => {
     setSelectedTaskIds(prev => {
-        const newSet = new Set(prev);
-        if (newSet.has(taskId)) {
-            newSet.delete(taskId);
+        if (prev.includes(taskId)) {
+            return prev.filter(id => id !== taskId);
         } else {
-            newSet.add(taskId);
+            return [...prev, taskId];
         }
-        return newSet;
     });
   };
 
@@ -454,7 +458,7 @@ const DashboardPage = () => {
     
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: 0 }}>
-            {selectedTaskIds.size > 0 && (
+            {selectedTaskIds.length > 0 && (
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -473,106 +477,150 @@ const DashboardPage = () => {
                             borderRadius: '100px',
                             fontWeight: 600 
                         }}>
-                             {Array.from(selectedTaskIds).reduce((sum, id) => {
+                             {selectedTaskIds.reduce((sum, id) => {
                                  const task = data.taskList.find(t => t.id === id);
                                  return sum + (task ? (settings.pointsMetric === 'sprint' ? task.sprintPoints : task.points) : 0);
                              }, 0)} pts
                         </span>
                     </h3>
                     
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        {Array.from(selectedTaskIds).map(id => {
+                    <Reorder.Group 
+                        axis="y" 
+                        values={selectedTaskIds} 
+                        onReorder={setSelectedTaskIds}
+                        style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', listStyle: 'none', margin: 0, padding: 0 }}
+                    >
+                        {selectedTaskIds.map(id => {
                             const task = data.taskList.find(t => t.id === id);
                             if (!task) return null;
                             
                             return (
-                                <div 
-                                    key={`selected-${task.id}`}
-                                    className="task-card"
-                                    onClick={() => handleTaskClick(task)}
-                                    style={{ 
-                                        display: 'flex', 
-                                        justifyContent: 'space-between', 
-                                        alignItems: 'center', 
-                                        padding: '1rem', 
-                                        borderRadius: '8px',
-                                        background: 'rgba(255, 255, 255, 0.05)',
-                                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                                        position: 'relative',
-                                        overflow: 'hidden',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease'
-                                    }} 
-                                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                                <Reorder.Item 
+                                    key={task.id}
+                                    value={task.id}
+                                    style={{ position: 'relative' }}
+                                    initial={{ scale: 1 }}
+                                    animate={{ scale: 1 }}
+                                    exit={{ scale: 1 }}
+                                    whileDrag={{ scale: 1.02, zIndex: 10 }}
+                                    onDragStart={() => isDragging.current = true}
+                                    onDragEnd={() => setTimeout(() => isDragging.current = false, 100)}
                                 >
-                                     {/* Status Line */}
-                                     <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: task.statusColor }}></div>
-                                     
-                                     {/* Task Details */}
-                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1, marginRight: '1rem' }}>
-                                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                            {task.project && (
-                                                <span style={{ 
-                                                    fontSize: '0.625rem', 
-                                                    textTransform: 'uppercase', 
-                                                    letterSpacing: '0.05em', 
-                                                    color: 'var(--text-secondary)',
-                                                    border: '1px solid rgba(255,255,255,0.1)',
-                                                    padding: '2px 6px',
-                                                    borderRadius: '4px'
-                                                }}>
-                                                    {task.project}
-                                                </span>
-                                            )}
-                                            <span style={{ fontSize: '0.625rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>#{task.customId || task.id.slice(0,5)}</span>
-                                        </div>
-                                        <span style={{ fontWeight: 500, fontSize: '0.9375rem', lineHeight: '1.4' }}>{task.name}</span>
-                                     </div>
-
-                                     {/* Actions */}
-                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                         <div style={{ 
-                                            background: 'rgba(255,255,255,0.05)', 
-                                            padding: '0.25rem 0.75rem', 
-                                            borderRadius: '100px', 
-                                            fontSize: '0.875rem', 
-                                            fontWeight: 600,
-                                            color: 'var(--accent-blue)',
-                                            minWidth: '3rem', 
-                                            textAlign: 'center'
-                                         }}>
-                                             {settings.pointsMetric === 'sprint' ? task.sprintPoints : task.points}
-                                         </div>
-                                         
-                                         <button
-                                            onClick={(e) => {
+                                    <div 
+                                        className="task-card"
+                                        onClick={(e) => {
+                                            if (isDragging.current) {
+                                                e.preventDefault();
                                                 e.stopPropagation();
-                                                toggleTaskSelection(task.id);
-                                            }}
-                                            style={{
-                                                background: 'rgba(239, 68, 68, 0.1)',
-                                                border: 'none',
-                                                borderRadius: '6px',
-                                                padding: '6px',
-                                                cursor: 'pointer',
-                                                color: '#ef4444',
-                                                display: 'flex',
+                                                return;
+                                            }
+                                            handleTaskClick(task);
+                                        }}
+                                        style={{ 
+                                            display: 'flex', 
+                                            justifyContent: 'space-between', 
+                                            alignItems: 'center', 
+                                            padding: '1rem', 
+                                            paddingLeft: '0.5rem',
+                                            borderRadius: '8px',
+                                            background: 'rgba(255, 255, 255, 0.05)',
+                                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                                            position: 'relative',
+                                            overflow: 'hidden',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease'
+                                        }} 
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                                        }}
+                                    >
+                                         {/* Drag Handle */}
+                                         <div 
+                                            style={{ 
+                                                padding: '0 0.5rem', 
+                                                cursor: 'grab', 
+                                                color: 'var(--text-secondary)', 
+                                                display: 'flex', 
                                                 alignItems: 'center',
-                                                justifyContent: 'center',
-                                                transition: 'all 0.2s'
+                                                opacity: 0.5
                                             }}
-                                            title="Retirer de la planification"
-                                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
-                                            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                                            onMouseEnter={(e) => e.target.style.opacity = 1}
+                                            onMouseLeave={(e) => e.target.style.opacity = 0.5}
                                          >
-                                             <X size={16} />
-                                         </button>
-                                     </div>
-                                </div>
+                                            <GripVertical size={16} />
+                                         </div>
+
+                                         {/* Status Line */}
+                                         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: task.statusColor }}></div>
+                                         
+                                         {/* Task Details */}
+                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1, marginRight: '1rem' }}>
+                                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                                {task.project && (
+                                                    <span style={{ 
+                                                        fontSize: '0.625rem', 
+                                                        textTransform: 'uppercase', 
+                                                        letterSpacing: '0.05em', 
+                                                        color: 'var(--text-secondary)',
+                                                        border: '1px solid rgba(255,255,255,0.1)',
+                                                        padding: '2px 6px',
+                                                        borderRadius: '4px'
+                                                    }}>
+                                                        {task.project}
+                                                    </span>
+                                                )}
+                                                <span style={{ fontSize: '0.625rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>#{task.customId || task.id.slice(0,5)}</span>
+                                            </div>
+                                            <span style={{ fontWeight: 500, fontSize: '0.9375rem', lineHeight: '1.4' }}>{task.name}</span>
+                                         </div>
+    
+                                         {/* Actions */}
+                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                             <div style={{ 
+                                                background: 'rgba(255,255,255,0.05)', 
+                                                padding: '0.25rem 0.75rem', 
+                                                borderRadius: '100px', 
+                                                fontSize: '0.875rem', 
+                                                fontWeight: 600,
+                                                color: 'var(--accent-blue)',
+                                                minWidth: '3rem', 
+                                                textAlign: 'center'
+                                             }}>
+                                                 {settings.pointsMetric === 'sprint' ? task.sprintPoints : task.points}
+                                             </div>
+                                             
+                                             <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleTaskSelection(task.id);
+                                                }}
+                                                style={{
+                                                    background: 'rgba(239, 68, 68, 0.1)',
+                                                    border: 'none',
+                                                    borderRadius: '6px',
+                                                    padding: '6px',
+                                                    cursor: 'pointer',
+                                                    color: '#ef4444',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                title="Retirer de la planification"
+                                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                                             >
+                                                 <X size={16} />
+                                             </button>
+                                         </div>
+                                    </div>
+                                </Reorder.Item>
                             );
                         })}
-                    </div>
+                    </Reorder.Group>
                 </motion.div>
             )}
 
@@ -648,13 +696,13 @@ const DashboardPage = () => {
                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                  <Calculator size={16} color="#3b82f6" />
                                  <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>
-                                     {selectedTaskIds.size} tâche{selectedTaskIds.size > 1 ? 's' : ''} sélectionnée{selectedTaskIds.size > 1 ? 's' : ''}
+                                     {selectedTaskIds.length} tâche{selectedTaskIds.length > 1 ? 's' : ''} sélectionnée{selectedTaskIds.length > 1 ? 's' : ''}
                                  </span>
                              </div>
                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                  <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Total :</span>
                                  <span style={{ fontSize: '1rem', fontWeight: 700, color: '#3b82f6' }}>
-                                     {Array.from(selectedTaskIds).reduce((sum, id) => {
+                                     {selectedTaskIds.reduce((sum, id) => {
                                          const task = data.taskList.find(t => t.id === id);
                                          const points = task ? (settings.pointsMetric === 'sprint' ? task.sprintPoints : task.points) : 0;
                                          return sum + points;
@@ -776,10 +824,10 @@ const DashboardPage = () => {
                                                 alignItems: 'center', 
                                                 padding: '1rem', 
                                                 borderRadius: '8px',
-                                                background: isSelectionMode && selectedTaskIds.has(task.id) 
+                                                background: isSelectionMode && selectedTaskIds.includes(task.id) 
                                                     ? 'rgba(59, 130, 246, 0.1)' 
                                                     : 'rgba(255,255,255,0.03)',
-                                                border: isSelectionMode && selectedTaskIds.has(task.id)
+                                                border: isSelectionMode && selectedTaskIds.includes(task.id)
                                                     ? '1px solid rgba(59, 130, 246, 0.3)'
                                                     : '1px solid rgba(255,255,255,0.05)',
                                                 position: 'relative',
@@ -789,12 +837,12 @@ const DashboardPage = () => {
                                                 }} 
                                                 className="task-card"
                                                 onMouseEnter={(e) => {
-                                                    if (!isSelectionMode || !selectedTaskIds.has(task.id)) {
+                                                    if (!isSelectionMode || !selectedTaskIds.includes(task.id)) {
                                                         e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
                                                     }
                                                 }}
                                                 onMouseLeave={(e) => {
-                                                     if (!isSelectionMode || !selectedTaskIds.has(task.id)) {
+                                                     if (!isSelectionMode || !selectedTaskIds.includes(task.id)) {
                                                         e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
                                                      }
                                                 }}
