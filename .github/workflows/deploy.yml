@@ -42,4 +42,4 @@ jobs:
 
       - name: Deploy with Rsync
         run: |
-          rsync -av --delete --chmod=D755,F644 -e "ssh -p 5022 -o StrictHostKeyChecking=no" dist/ ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:${{ secrets.REMOTE_TARGET }}
+          rsync -av --delete --chmod=D755,F644 -e "ssh -p 5022 -o StrictHostKeyChecking=no -o BatchMode=yes" dist/ ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:${{ secrets.REMOTE_TARGET }}
