@@ -850,8 +850,8 @@ const DashboardPage = () => {
                                                     <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: task.statusColor }}></div>
                                                     
                                                     {isSelectionMode && (
-                                                        <div style={{ marginRight: '1rem', color: selectedTaskIds.has(task.id) ? '#3b82f6' : 'var(--text-secondary)' }}>
-                                                            {selectedTaskIds.has(task.id) ? <CheckSquare size={20} /> : <Square size={20} />}
+                                                        <div style={{ marginRight: '1rem', color: selectedTaskIds.includes(task.id) ? '#3b82f6' : 'var(--text-secondary)' }}>
+                                                            {selectedTaskIds.includes(task.id) ? <CheckSquare size={20} /> : <Square size={20} />}
                                                         </div>
                                                     )}
 
