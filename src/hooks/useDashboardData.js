@@ -433,37 +433,130 @@ export const useDashboardData = () => {
     
       }, [rawData, settings]);
 
-    const [debugOverride, setDebugOverride] = useState({ points: null, day: null, hour: null });
+    const [debugOverride, setDebugOverride] = useState({ points: null, day: null, hour: null, daily: {} });
 
-      // Status Check Logic
-      const getStatusCheck = () => {
+const getStatusCheck = () => {
         const today = new Date();
         const currentHour = debugOverride.hour !== null ? debugOverride.hour : today.getHours();
 
-        // Check if we should expect points for today (after 1pm / 13h)
+        // Check if we should expect points for today
         const currentIsoDay = debugOverride.day !== null ? debugOverride.day : (today.getDay() || 7);
-        const currentWeeklyPoints = debugOverride.points !== null ? debugOverride.points : data.weeklyPoints;
         
-        const workDaysPassed = Math.min(Math.max(0, currentIsoDay - 1), 4);
+        // Construct the effective daily breakdown
+        const effectiveDailyBreakdown = [...(data.dailyBreakdown || [0,0,0,0,0,0,0])];
+        if (debugOverride.daily) {
+            Object.keys(debugOverride.daily).forEach(dayIndex => {
+                const val = debugOverride.daily[dayIndex];
+                if (val !== null && val !== undefined && val !== '') {
+                    effectiveDailyBreakdown[parseInt(dayIndex)] = parseFloat(val);
+                }
+            });
+        }
         
-        let pointsAddedForToday = 0;
-        // If it's a weekday and after 13:00, expect half the daily points
-        if (currentIsoDay >= 1 && currentIsoDay <= 5 && currentHour >= 13) {
-             pointsAddedForToday = 0.5;
+        // Calculate weekly points from the effective breakdown (unless total is strictly overridden, which takes precedence but we should probably disable total override if using daily)
+        // Let's say: if daily overrides exist, use sum of effective breakdown.
+        // If total points override exists AND no daily overrides? Or just let total override win?
+        // User asked to edit "by day". So daily overrides should likely drive the total.
+        
+        let currentWeeklyPoints = data.weeklyPoints;
+        const hasDailyOverrides = debugOverride.daily && Object.values(debugOverride.daily).some(v => v !== null && v !== '');
+        
+        if (hasDailyOverrides) {
+             currentWeeklyPoints = effectiveDailyBreakdown.reduce((a, b) => a + b, 0);
+        } else if (debugOverride.points !== null) {
+             currentWeeklyPoints = debugOverride.points;
         }
 
-        const pointsPerDay = settings.weeklyTarget / 4;
-        const expectedPoints = pointsPerDay * (workDaysPassed + pointsAddedForToday);
+        // Calculate points done strictly today
+        // Note: data.dailyBreakdown is 0-indexed where 0 = Monday
+        const dayIndex = currentIsoDay - 1;
+        let pointsDoneToday = effectiveDailyBreakdown[dayIndex] || 0;
         
-        // Calculate points expected by END of today to see what is left to do today
-        const workDaysIncludingToday = Math.min(currentIsoDay, 4);
-        const expectedByEndOfToday = pointsPerDay * workDaysIncludingToday;
-        const pointsToDoToday = Math.max(0, expectedByEndOfToday - currentWeeklyPoints);
+        // Validating the logic:
+        // if hasDailyOverrides, effectiveDailyBreakdown[dayIndex] is correct.
+        // if NOT hasDailyOverrides but debugOverride.points is set? 
+        // fallback to the estimation logic we had before?
+        if (!hasDailyOverrides && debugOverride.points !== null) {
+             const totalRecorded = data.dailyBreakdown ? data.dailyBreakdown.reduce((a, b) => a + b, 0) : 0;
+             const recordedToday = data.dailyBreakdown ? data.dailyBreakdown[dayIndex] : 0;
+             const recordedOthers = totalRecorded - recordedToday;
+             pointsDoneToday = Math.max(0, currentWeeklyPoints - recordedOthers);
+        }
 
-        const isUpToDate = currentWeeklyPoints >= expectedPoints;
-        const diff = currentWeeklyPoints - expectedPoints;
+        const pointsDonePreviously = Math.max(0, currentWeeklyPoints - pointsDoneToday);
+
+        const workDaysPassed = Math.min(Math.max(0, currentIsoDay - 1), 4); // Days fully passed (if today is Tue, passed=1 Mon)
         
-        return { isUpToDate, expectedPoints, diff, currentIsoDay, pointsToDoToday, expectedByEndOfToday, currentPoints: currentWeeklyPoints, currentHour };
+        // Target calculation
+        const pointsPerDay = settings.weeklyTarget / 4;
+        
+        const targetPreviously = pointsPerDay * workDaysPassed;
+        
+        const rawDeficit = targetPreviously - pointsDonePreviously;
+        
+        // If rawDeficit > 0, we are behind. 
+        // If rawDeficit < 0, we are ahead (Advance).
+        
+        const deficit = Math.max(0, rawDeficit);
+        const bankedAdvance = Math.max(0, -rawDeficit); // Advance from previous days
+        
+        // Target for TODAY:
+        // Always at least pointsPerDay.
+        // Plus any deficit.
+        // (Advance does NOT reduce today's target, per user request)
+        
+        // We only count today if it's a workday (Mon-Thu).
+        // If Fri-Sun, target today is 0 (bonus).
+        let targetToday = 0;
+        if (currentIsoDay >= 1 && currentIsoDay <= 4) {
+            targetToday = pointsPerDay;
+        }
+        
+        const totalTargetToday = targetToday + deficit;
+        
+        const pointsToDoToday = Math.max(0, totalTargetToday - pointsDoneToday);
+        
+        // Current Advance (Banked + any extra done today)
+        // Note: If we haven't finished today's target, we don't count "advance" from today yet.
+        // Actually, if I have done 5/7 today, I have no "advance" from today.
+        // If I have done 10/7 today, I have +3 advance from today.
+        
+        const advanceToday = Math.max(0, pointsDoneToday - targetToday); 
+        // Wait, if I have a deficit, pointsDoneToday goes to fill deficit first.
+        // So actually:
+        // Surplus = TotalPointsDone - TotalTargetSoFar(including today)
+        // But we want to separate "Banked Advance" vs "Today's Work".
+        
+        // Let's stick to the high level "Advance" metric for the UI:
+        const expectedByEndOfToday = pointsPerDay * Math.min(currentIsoDay, 4);
+        const totalAdvance = Math.max(0, currentWeeklyPoints - expectedByEndOfToday);
+
+        // However, specifically for the "Banked" concept (Monday's extra):
+        // If I have banked advance, I want to see "Advance: X".
+        // And "Points to do: Y".
+        
+        // Expected Points (for the progress bar or simple tracking)
+        // Use standard trajectory
+        const expectedPoints = targetPreviously; // At start of today
+
+        // "Up To Date" now means "No Deficit from previous days". 
+        // We shouldn't flag "Action Required" (Red) just because today's work isn't done yet, 
+        // UNLESS there is an actual backlog from the past.
+        const isUpToDate = deficit <= 0;
+
+        return { 
+            isUpToDate, 
+            expectedPoints, 
+            diff: currentWeeklyPoints - expectedByEndOfToday, 
+            currentIsoDay, 
+            pointsToDoToday, 
+            expectedByEndOfToday, 
+            currentPoints: currentWeeklyPoints, 
+            currentHour,
+            advance: bankedAdvance, // This is the specific "past advance" we want to highlight
+            totalAdvance,
+            pointsPerDay
+        };
       };
 
     return {

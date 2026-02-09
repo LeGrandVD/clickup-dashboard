@@ -178,6 +178,20 @@ const DashboardPage = () => {
             </div>
             </div>
             <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button 
+                  onClick={() => setShowDebug(!showDebug)} 
+                  style={{ 
+                      background: showDebug ? 'rgba(239, 68, 68, 0.2)' : 'none', 
+                      border: 'none', 
+                      borderRadius: '6px',
+                      padding: '4px',
+                      color: showDebug ? '#ef4444' : 'var(--text-secondary)', 
+                      cursor: 'pointer' 
+                  }}
+                  title="Mode Debug"
+              >
+                <Bug size={20} />
+              </button>
               <button onClick={fetchData} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
                 <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
               </button>
@@ -188,6 +202,103 @@ const DashboardPage = () => {
               />
             </div>
         </div>
+        
+        {/* Debug Panel */}
+        <AnimatePresence>
+            {showDebug && (
+                <motion.div
+                    initial={{ height: 0, opacity: 0, marginBottom: 0 }}
+                    animate={{ height: 'auto', opacity: 1, marginBottom: 24 }}
+                    exit={{ height: 0, opacity: 0, marginBottom: 0 }}
+                    className="glass-card"
+                    style={{ overflow: 'hidden', border: '1px solid rgba(239, 68, 68, 0.3)', background: 'rgba(239, 68, 68, 0.05)' }}
+                >
+                    <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#ef4444', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <Bug size={16} /> DEBUG CONTROLS
+                            </h3>
+                            <button 
+                                onClick={() => setDebugOverride({ points: null, day: null, hour: null })}
+                                style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.1)', border: 'none', padding: '2px 8px', borderRadius: '4px', cursor: 'pointer' }}
+                            >
+                                Reset
+                            </button>
+                        </div>
+                        
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+                            {/* Day Override */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Jour simulé</label>
+                                <select 
+                                    value={debugOverride.day ?? ''} 
+                                    onChange={(e) => setDebugOverride(prev => ({ ...prev, day: e.target.value ? parseInt(e.target.value) : null }))}
+                                    style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0.5rem', borderRadius: '6px' }}
+                                >
+                                    <option value="">Auto ({['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][new Date().getDay()]})</option>
+                                    <option value="1">Lundi</option>
+                                    <option value="2">Mardi</option>
+                                    <option value="3">Mercredi</option>
+                                    <option value="4">Jeudi</option>
+                                    <option value="5">Vendredi</option>
+                                    <option value="6">Samedi</option>
+                                    <option value="0">Dimanche</option>
+                                </select>
+                            </div>
+
+                            {/* Points Daily Override */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', gridColumn: 'span 3' }}>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Points Par Jour (Lundi - Dimanche)</label>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.5rem' }}>
+                                    {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d, i) => (
+                                        <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                                            <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{d}</span>
+                                            <input 
+                                                type="number" 
+                                                placeholder={data.dailyBreakdown ? data.dailyBreakdown[i] : '-'}
+                                                value={debugOverride.daily?.[i] ?? ''}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setDebugOverride(prev => ({ 
+                                                        ...prev, 
+                                                        daily: { 
+                                                            ...prev.daily, 
+                                                            [i]: val === '' ? null : parseFloat(val) 
+                                                        } 
+                                                    }));
+                                                }}
+                                                style={{ 
+                                                    width: '100%', 
+                                                    background: 'rgba(0,0,0,0.3)', 
+                                                    border: '1px solid rgba(255,255,255,0.1)', 
+                                                    color: 'white', 
+                                                    padding: '0.25rem', 
+                                                    borderRadius: '4px',
+                                                    textAlign: 'center',
+                                                    fontSize: '0.75rem'
+                                                }}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Hour Override */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Heure simulée ({debugOverride.hour ?? new Date().getHours()}h)</label>
+                                <input 
+                                    type="range" 
+                                    min="0" max="23"
+                                    value={debugOverride.hour ?? new Date().getHours()}
+                                    onChange={(e) => setDebugOverride(prev => ({ ...prev, hour: parseInt(e.target.value) }))}
+                                    style={{ accentColor: '#ef4444' }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
         
         {/* Navigation */}
         <div className="glass-card" style={{ padding: '0.5rem', display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
@@ -271,14 +382,18 @@ const DashboardPage = () => {
                   marginBottom: '1.5rem',
                   background: !statusCheck.isUpToDate
                     ? 'rgba(255, 255, 255, 0.03)'
-                    : statusCheck.pointsToDoToday > 0
-                        ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.05))'
-                        : 'linear-gradient(135deg, rgba(74, 222, 128, 0.1), rgba(34, 197, 94, 0.05))',
+                    : statusCheck.advance > 0
+                        ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(147, 51, 234, 0.05))' // Purple for Advance
+                        : statusCheck.pointsToDoToday > 0
+                            ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.05))' // Blue
+                            : 'linear-gradient(135deg, rgba(74, 222, 128, 0.1), rgba(34, 197, 94, 0.05))', // Green
                   border: !statusCheck.isUpToDate
                     ? '1px solid var(--card-border)'
-                    : statusCheck.pointsToDoToday > 0
-                        ? '1px solid rgba(59, 130, 246, 0.2)'
-                        : '1px solid rgba(74, 222, 128, 0.2)'
+                    : statusCheck.advance > 0
+                        ? '1px solid rgba(168, 85, 247, 0.2)'
+                        : statusCheck.pointsToDoToday > 0
+                            ? '1px solid rgba(59, 130, 246, 0.2)'
+                            : '1px solid rgba(74, 222, 128, 0.2)'
               }}
             >
               <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
@@ -292,6 +407,16 @@ const DashboardPage = () => {
                      }}>
                          <ListTodo size={24} />
                      </div>
+                  ) : statusCheck.advance > 0 ? (
+                    <div style={{ 
+                        width: '48px', height: '48px', 
+                        borderRadius: '50%', 
+                        background: 'rgba(168, 85, 247, 0.1)', 
+                        color: '#a855f7',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                        <CheckCircle2 size={24} />
+                    </div>
                   ) : statusCheck.pointsToDoToday > 0 ? (
                      <div style={{ 
                          width: '48px', height: '48px', 
@@ -318,18 +443,69 @@ const DashboardPage = () => {
               <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
                   {!statusCheck.isUpToDate 
                     ? "Action requise" 
-                    : statusCheck.pointsToDoToday > 0
-                        ? "Objectif du jour"
-                        : "Excellent rythme !"
+                    : statusCheck.advance > 0
+                        ? `Vous avez ${Math.round(statusCheck.advance * 4) / 4} pts d'avance`
+                        : statusCheck.pointsToDoToday > 0
+                            ? "Objectif du jour"
+                            : "Excellent rythme !"
                   }
               </h3>
               
+              {statusCheck.pointsToDoToday > 0 && (
+                  <div style={{ 
+                      background: !statusCheck.isUpToDate 
+                        ? 'rgba(239, 68, 68, 0.1)' 
+                        : statusCheck.advance > 0 
+                            ? 'rgba(168, 85, 247, 0.15)' 
+                            : 'rgba(59, 130, 246, 0.1)',
+                      border: !statusCheck.isUpToDate 
+                        ? '1px solid rgba(239, 68, 68, 0.2)' 
+                        : statusCheck.advance > 0 
+                            ? '1px solid rgba(168, 85, 247, 0.3)' 
+                            : '1px solid rgba(59, 130, 246, 0.2)',
+                      borderRadius: '12px', 
+                      padding: '0.75rem', 
+                      margin: '0.5rem 0 1rem 0',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '0.25rem'
+                  }}>
+                      <span style={{ 
+                          fontSize: '2rem', 
+                          fontWeight: 800, 
+                          lineHeight: '1',
+                          color: !statusCheck.isUpToDate 
+                            ? '#f87171' 
+                            : statusCheck.advance > 0 
+                                ? '#d8b4fe' 
+                                : '#60a5fa'
+                      }}>
+                          {Math.round(statusCheck.pointsToDoToday * 4) / 4} pts
+                      </span>
+                      <span style={{ 
+                          fontSize: '0.875rem', 
+                          fontWeight: 500,
+                          opacity: 0.9,
+                          color: !statusCheck.isUpToDate 
+                            ? '#fca5a5' 
+                            : statusCheck.advance > 0 
+                                ? '#e9d5ff' 
+                                : '#bfdbfe'
+                      }}>
+                          {!statusCheck.isUpToDate ? "manquants pour être à jour" : "pour l'objectif du jour"}
+                      </span>
+                  </div>
+              )}
+
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1rem', lineHeight: '1.5' }}>
                   {!statusCheck.isUpToDate 
-                    ? `Il vous manque ${Math.abs(Math.round(statusCheck.diff * 4) / 4)} points pour être à jour sur votre semaine. Objectif total pour aujourd'hui : ${Math.round(statusCheck.pointsToDoToday * 4) / 4} points.`
-                    : statusCheck.pointsToDoToday > 0
-                        ? `Vous avez ${Math.round(statusCheck.pointsToDoToday * 4) / 4} points à valider aujourd'hui.`
-                        : "Vous êtes à jour dans vos objectifs de la semaine. Continuez comme ça !"
+                    ? `Il vous manque ${Math.abs(Math.round(statusCheck.diff * 4) / 4)} points pour être à jour. Objectif total pour aujourd'hui : ${Math.round(statusCheck.pointsToDoToday * 4) / 4} points.`
+                    : statusCheck.advance > 0 
+                        ? "Excellent travail ! Votre avance est sécurisée."
+                        : statusCheck.pointsToDoToday > 0
+                            ? `Continuez sur votre lancée ! Objectif du jour : ${Math.round(statusCheck.pointsToDoToday * 4) / 4} points.`
+                            : "Vous êtes à jour dans vos objectifs de la semaine. Continuez comme ça !"
                   }
               </p>
 
@@ -349,9 +525,11 @@ const DashboardPage = () => {
                             height: '100%', 
                             background: !statusCheck.isUpToDate 
                                 ? '#ef4444' 
-                                : statusCheck.pointsToDoToday > 0 
-                                    ? '#3b82f6' 
-                                    : '#4ade80',
+                                : statusCheck.advance > 0
+                                    ? '#a855f7'
+                                    : statusCheck.pointsToDoToday > 0 
+                                        ? '#3b82f6' 
+                                        : '#4ade80',
                             borderRadius: '100px'
                         }}
                     />
@@ -360,7 +538,7 @@ const DashboardPage = () => {
 
                <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', fontSize: '0.875rem' }}>
                     <div style={{ textAlign: 'center' }}>
-                        <span style={{ display: 'block', fontWeight: 600, color: statusCheck.isUpToDate ? '#4ade80' : 'var(--text-primary)' }}>
+                        <span style={{ display: 'block', fontWeight: 600, color: statusCheck.isUpToDate ? (statusCheck.advance > 0 ? '#a855f7' : '#4ade80') : 'var(--text-primary)' }}>
                             {Math.round(statusCheck.currentPoints * 4) / 4}
                         </span>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Fait</span>
@@ -370,7 +548,7 @@ const DashboardPage = () => {
                         <span style={{ display: 'block', fontWeight: 600, color: 'var(--text-secondary)' }}>
                             {Math.round(statusCheck.expectedByEndOfToday * 4) / 4}
                         </span>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Objectif</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Objectif Std</span>
                     </div>
                </div>
             </motion.div>
