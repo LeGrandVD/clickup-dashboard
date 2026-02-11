@@ -101,7 +101,7 @@ const WeekView = ({ data, currentDate, setCurrentDate, settings }) => {
                 <BarChart
                     data={['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map((day, index) => ({
                         name: day,
-                        points: data.dailyBreakdown ? Math.round(data.dailyBreakdown[index] * 2) / 2 : 0
+                        points: data.dailyBreakdown ? Math.round(data.dailyBreakdown[index] * 4) / 4 : 0
                     }))}
                     margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                 >
@@ -174,7 +174,7 @@ const WeekView = ({ data, currentDate, setCurrentDate, settings }) => {
                         }}>
                             <h4 style={{ textTransform: 'capitalize', fontSize: '1rem', fontWeight: 600 }}>{dateStr}</h4>
                             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: '12px' }}>
-                                {Math.round(data.dailyBreakdown[index] * 2)/2} pts
+                                {Math.round(data.dailyBreakdown[index] * 4)/4} pts
                             </span>
                         </div>
                         

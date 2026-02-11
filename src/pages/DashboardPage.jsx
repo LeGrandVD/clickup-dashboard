@@ -178,20 +178,22 @@ const DashboardPage = () => {
             </div>
             </div>
             <div style={{ display: 'flex', gap: '0.75rem' }}>
-              <button 
-                  onClick={() => setShowDebug(!showDebug)} 
-                  style={{ 
-                      background: showDebug ? 'rgba(239, 68, 68, 0.2)' : 'none', 
-                      border: 'none', 
-                      borderRadius: '6px',
-                      padding: '4px',
-                      color: showDebug ? '#ef4444' : 'var(--text-secondary)', 
-                      cursor: 'pointer' 
-                  }}
-                  title="Mode Debug"
-              >
-                <Bug size={20} />
-              </button>
+              {import.meta.env.DEV && (
+                <button 
+                    onClick={() => setShowDebug(!showDebug)} 
+                    style={{ 
+                        background: showDebug ? 'rgba(239, 68, 68, 0.2)' : 'none', 
+                        border: 'none', 
+                        borderRadius: '6px',
+                        padding: '4px',
+                        color: showDebug ? '#ef4444' : 'var(--text-secondary)', 
+                        cursor: 'pointer' 
+                    }}
+                    title="Mode Debug"
+                >
+                  <Bug size={20} />
+                </button>
+              )}
               <button onClick={fetchData} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
                 <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
               </button>
@@ -205,7 +207,7 @@ const DashboardPage = () => {
         
         {/* Debug Panel */}
         <AnimatePresence>
-            {showDebug && (
+            {import.meta.env.DEV && showDebug && (
                 <motion.div
                     initial={{ height: 0, opacity: 0, marginBottom: 0 }}
                     animate={{ height: 'auto', opacity: 1, marginBottom: 24 }}
@@ -500,12 +502,12 @@ const DashboardPage = () => {
 
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1rem', lineHeight: '1.5' }}>
                   {!statusCheck.isUpToDate 
-                    ? `Il vous manque ${Math.abs(Math.round(statusCheck.diff * 4) / 4)} points pour être à jour. Objectif total pour aujourd'hui : ${Math.round(statusCheck.pointsToDoToday * 4) / 4} points.`
+                    ? `Vous avez ${Math.round(statusCheck.pointsDoneToday * 4) / 4} pts aujourd'hui. Il vous manque ${Math.abs(Math.round(statusCheck.diff * 4) / 4)} points pour être à jour.`
                     : statusCheck.advance > 0 
-                        ? "Excellent travail ! Votre avance est sécurisée."
+                        ? `Excellent travail ! Vous avez accumulé ${Math.round(statusCheck.pointsDoneToday * 4) / 4} pts aujourd'hui.`
                         : statusCheck.pointsToDoToday > 0
-                            ? `Continuez sur votre lancée ! Objectif du jour : ${Math.round(statusCheck.pointsToDoToday * 4) / 4} points.`
-                            : "Vous êtes à jour dans vos objectifs de la semaine. Continuez comme ça !"
+                            ? `Vous avez ${Math.round(statusCheck.pointsDoneToday * 4) / 4} pts aujourd'hui. Objectif : ${Math.round((statusCheck.pointsDoneToday + statusCheck.pointsToDoToday) * 4) / 4} pts.`
+                            : `Bravo ! Vous avez accumulé ${Math.round(statusCheck.pointsDoneToday * 4) / 4} pts aujourd'hui. Objectif atteint !`
                   }
               </p>
 

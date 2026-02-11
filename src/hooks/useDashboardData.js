@@ -536,13 +536,18 @@ const getStatusCheck = () => {
         // And "Points to do: Y".
         
         // Expected Points (for the progress bar or simple tracking)
-        // Use standard trajectory
-        const expectedPoints = targetPreviously; // At start of today
+        // Base expectation: what should be done from previous days
+        let expectedPoints = targetPreviously;
+        
+        // Lunch checkpoint: At 1pm (13h) on a workday, we should have done at least half of today's target
+        if (currentIsoDay >= 1 && currentIsoDay <= 4 && currentHour >= 13) {
+            // Add half of today's target (including any deficit) to the expectation
+            expectedPoints += totalTargetToday / 2;
+        }
 
-        // "Up To Date" now means "No Deficit from previous days". 
-        // We shouldn't flag "Action Required" (Red) just because today's work isn't done yet, 
-        // UNLESS there is an actual backlog from the past.
-        const isUpToDate = deficit <= 0;
+        // "Up To Date" check: Are we meeting our expectations?
+        // This now accounts for the lunch checkpoint (1pm = half of today's target)
+        const isUpToDate = currentWeeklyPoints >= expectedPoints;
 
         return { 
             isUpToDate, 
@@ -555,7 +560,8 @@ const getStatusCheck = () => {
             currentHour,
             advance: bankedAdvance, // This is the specific "past advance" we want to highlight
             totalAdvance,
-            pointsPerDay
+            pointsPerDay,
+            pointsDoneToday // Points accumulated today
         };
       };
 
